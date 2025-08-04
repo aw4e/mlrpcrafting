@@ -14,6 +14,7 @@ import {
   Sparkles,
   Target,
   CheckCircle2,
+  CircleX,
   Hammer,
   Archive,
   Coins,
@@ -106,6 +107,7 @@ export default function CraftingOptimizer() {
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("Raw Materials");
   const [showCategories, setShowCategories] = useState<boolean>(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   const handleOptimize = async (): Promise<void> => {
     setLoading(true);
@@ -179,10 +181,48 @@ export default function CraftingOptimizer() {
   const formatItemName = (name: string): string => {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
-
   const getTotalItems = (): number => {
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   };
+  const toggleStepCompletion = (stepIndex: number, step: any): void => {
+    const isCompleted = completedSteps.has(stepIndex);
+
+    if (isCompleted) {
+      setCompletedSteps((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(stepIndex);
+        return newSet;
+      });
+
+      setInventory((prev) => {
+        const newInventory = { ...prev };
+        step.requirements.forEach((req: any) => {
+          newInventory[req.item] = (newInventory[req.item] || 0) + req.quantity;
+        });
+        return newInventory;
+      });
+    } else {
+      setCompletedSteps((prev) => new Set([...prev, stepIndex]));
+
+      setInventory((prev) => {
+        const newInventory = { ...prev };
+        step.requirements.forEach((req: any) => {
+          if (newInventory[req.item]) {
+            newInventory[req.item] = Math.max(
+              0,
+              newInventory[req.item] - req.quantity
+            );
+          }
+        });
+        return newInventory;
+      });
+    }
+  };
+
+  const resetCompletedSteps = (): void => {
+    setCompletedSteps(new Set());
+  };
+
   const CategoryIcon =
     categoryIcons[activeCategory as keyof typeof categoryIcons];
 
@@ -232,9 +272,8 @@ export default function CraftingOptimizer() {
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-full mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      </div>{" "}
+      <div className="max-w-full mx-auto px-3 sm:px-6 mt-7">
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-8">
           {/* Left Panel - Inventory Input */}
           <div className="xl:col-span-2">
@@ -337,15 +376,25 @@ export default function CraftingOptimizer() {
           {/* Right Panel - Results */}
           <div className="xl:col-span-3">
             <div className="bg-gray-900 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden min-h-[400px] sm:min-h-[600px]">
+              {" "}
               <div className="p-4 sm:p-6 border-b border-gray-800 bg-gradient-to-r from-gray-800 to-gray-900">
-                <div className="flex items-center space-x-3">
-                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
-                  <h2 className="text-lg sm:text-xl font-bold text-white">
-                    Optimization Results
-                  </h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
+                    <h2 className="text-lg sm:text-xl font-bold text-white">
+                      Optimization Results
+                    </h2>
+                  </div>
+                  {completedSteps.size > 0 && (
+                    <button
+                      onClick={resetCompletedSteps}
+                      className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-lg transition-colors"
+                    >
+                      Reset Progress
+                    </button>
+                  )}
                 </div>
               </div>
-
               <div className="p-4 sm:p-6">
                 {error && (
                   <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-900/50 border border-red-700 rounded-xl backdrop-blur-sm">
@@ -419,7 +468,6 @@ export default function CraftingOptimizer() {
                         </div>
                       </div>
                     </div>
-
                     {/* Ready Items */}
                     {result.readyItems.length > 0 && (
                       <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-700 rounded-xl overflow-hidden">
@@ -450,52 +498,116 @@ export default function CraftingOptimizer() {
                           </div>
                         </div>
                       </div>
-                    )}
-
+                    )}{" "}
                     {/* Production Steps */}
                     {result.productionSteps.length > 0 && (
                       <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700 rounded-xl overflow-hidden">
                         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-700 bg-blue-900/20">
-                          <div className="flex items-center space-x-2">
-                            <Hammer className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                            <h3 className="text-base sm:text-lg font-semibold text-blue-100">
-                              Production Steps ({result.productionSteps.length})
-                            </h3>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Hammer className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+                              <h3 className="text-base sm:text-lg font-semibold text-blue-100">
+                                Production Steps (
+                                {result.productionSteps.length})
+                              </h3>
+                            </div>
+                            {completedSteps.size > 0 && (
+                              <span className="text-xs text-green-400">
+                                {completedSteps.size} completed
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="p-4 sm:p-6">
-                          <div className="space-y-3 sm:space-y-4 max-h-48 sm:max-h-60 overflow-y-auto custom-scrollbar">
+                          <div className="space-y-3 sm:space-y-4 max-h-96 sm:max-h-[500px] overflow-y-auto custom-scrollbar">
                             {result.productionSteps.map((step, index) => (
                               <div
                                 key={index}
-                                className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 sm:p-5 hover:border-blue-500/50 transition-all duration-200"
+                                className={`relative bg-gray-800/50 border rounded-xl p-4 sm:p-5 transition-all duration-200 ${
+                                  completedSteps.has(index)
+                                    ? "border-green-500/50 bg-green-900/20 opacity-75"
+                                    : "border-gray-700 hover:border-blue-500/50"
+                                }`}
                               >
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4 gap-2">
-                                  <span className="font-semibold text-white text-base sm:text-lg">
+                                {" "}
+                                {/* Mark as Done Button */}
+                                <div className="absolute top-3 right-3">
+                                  <button
+                                    onClick={() =>
+                                      toggleStepCompletion(index, step)
+                                    }
+                                    className={`p-2 ${
+                                      completedSteps.has(index)
+                                        ? "bg-yellow-600 hover:bg-yellow-700"
+                                        : "bg-blue-600 hover:bg-blue-700"
+                                    } text-white rounded-lg transition-colors group`}
+                                    title={
+                                      completedSteps.has(index)
+                                        ? "Unmark Step"
+                                        : "Mark as Done"
+                                    }
+                                  >
+                                    {completedSteps.has(index) ? (
+                                      <CircleX className="h-4 w-4" />
+                                    ) : (
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </div>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4 gap-2 pr-12">
+                                  <span
+                                    className={`font-semibold text-base sm:text-lg ${
+                                      completedSteps.has(index)
+                                        ? "text-green-300 line-through"
+                                        : "text-white"
+                                    }`}
+                                  >
                                     {step.displayName} ×
                                     {step.quantity.toLocaleString()}
                                   </span>
-                                  <span className="font-bold text-green-400 text-lg sm:text-xl">
+                                  <span
+                                    className={`font-bold text-lg sm:text-xl ${
+                                      completedSteps.has(index)
+                                        ? "text-green-300"
+                                        : "text-green-400"
+                                    }`}
+                                  >
                                     {formatCurrency(step.value)}
                                   </span>
                                 </div>
-
                                 {step.requirements.length > 0 && (
                                   <div className="text-xs sm:text-sm text-gray-300 mb-3 bg-gray-900/50 p-2 sm:p-3 rounded-lg border border-gray-600">
                                     <strong className="text-blue-300">
                                       Requirements:
                                     </strong>{" "}
                                     {step.requirements
-                                      .map(
-                                        (req) =>
-                                          `${
-                                            req.displayName
-                                          } ×${req.quantity.toLocaleString()}`
-                                      )
-                                      .join(", ")}
+                                      .map((req: any) => {
+                                        const available =
+                                          inventory[req.item] || 0;
+                                        const hasEnough =
+                                          available >= req.quantity;
+
+                                        return (
+                                          <span
+                                            key={req.item}
+                                            className={
+                                              hasEnough
+                                                ? "text-green-300"
+                                                : "text-red-300"
+                                            }
+                                          >
+                                            {req.displayName} ×
+                                            {req.quantity.toLocaleString()}
+                                            {!hasEnough &&
+                                              ` (need ${req.quantity - available} more)`}
+                                          </span>
+                                        );
+                                      })
+                                      .reduce((prev: any, curr: any) =>
+                                        prev ? [prev, ", ", curr] : curr
+                                      )}
                                   </div>
                                 )}
-
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                   <div className="flex items-center space-x-2 text-gray-400">
                                     <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -510,13 +622,15 @@ export default function CraftingOptimizer() {
                                     </span>
                                   </div>
                                 </div>
+                                {completedSteps.has(index) && (
+                                  <div className="absolute inset-0 bg-green-500/10 rounded-xl pointer-events-none"></div>
+                                )}
                               </div>
                             ))}
                           </div>
                         </div>
                       </div>
                     )}
-
                     {/* Remaining Materials */}
                     {result.remainingMaterials.length > 0 && (
                       <div className="bg-gradient-to-br from-yellow-900/30 to-orange-900/30 border border-yellow-700 rounded-xl overflow-hidden">
