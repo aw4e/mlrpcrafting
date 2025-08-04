@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RPCalc
+
+Aplikasi web untuk optimasi crafting dan kalkulasi resource dalam permainan mining.
+
+## Features
+
+- 🔨 **Crafting Optimizer** - Optimasi resep crafting untuk efisiensi maksimal
+- ⛏️ **Mining Calculator** - Kalkulasi resource dan profit mining
+- 📊 **Resource Tracking** - Pelacakan dan analisis penggunaan resource
+- 🎯 **Cost Analysis** - Analisis biaya produksi dan keuntungan
+
+## Tech Stack
+
+- **Framework**: Next.js 14 dengan App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Runtime**: Bun
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+Pastikan Anda telah menginstall [Bun](https://bun.sh/) di sistem Anda.
+
+### Installation
+
+1. Clone repository ini:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+git clone https://github.com/yourusername/rpcalc.git
+cd rpcalc
+```
+
+2. Install dependencies:
+
+```bash
+bun install
+```
+
+3. Jalankan development server:
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Buka [http://localhost:3000](http://localhost:3000) di browser Anda.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Crafting Optimizer
 
-## Learn More
+1. Pilih item yang ingin dicrafting
+2. Masukkan jumlah target produksi
+3. Sistem akan menghitung kombinasi resep optimal
+4. Review hasil optimasi untuk efisiensi maksimal
 
-To learn more about Next.js, take a look at the following resources:
+### Mining Calculator
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Input data mining yang tersedia
+2. Hitung estimasi profit dan resource
+3. Analisis ROI untuk berbagai strategi mining
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Kontribusi
 
-## Deploy on Vercel
+Kontribusi dari semua pihak sangat dipersilahkan! 🎉
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Jika Anda ingin berkontribusi pada proyek ini, silakan:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork repositori ini
+2. Buat branch baru untuk fitur atau perbaikan Anda (`git checkout -b feature/nama-fitur`)
+3. Commit perubahan Anda (`git commit -m 'Menambahkan fitur baru'`)
+4. Push ke branch (`git push origin feature/nama-fitur`)
+5. Buat Pull Request
+
+### Jenis Kontribusi yang Diharapkan
+
+- 🐛 Perbaikan bug
+- ✨ Penambahan fitur baru
+- 📝 Perbaikan dokumentasi
+- 🎨 Peningkatan UI/UX
+- ⚡ Optimasi performa
+- 🧪 Penambahan testing
+
+Terima kasih telah berkontribusi! 🙏
