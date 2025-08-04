@@ -8,6 +8,7 @@ import {
 } from "@/types";
 import { useState } from "react";
 import Image from "next/image";
+import miningData from "@/data/mining.json";
 import {
   Package,
   Zap,
@@ -189,6 +190,13 @@ export default function CraftingOptimizer() {
   const getTotalItems = (): number => {
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   };
+  const getItemPrice = (itemName: string): number => {
+    const allItems = {
+      ...(miningData as any).tambang,
+      ...(miningData as any).perhiasan,
+    };
+    return allItems[itemName]?.price || 0;
+  };
   const toggleStepCompletion = (
     stepIndex: number,
     step: OptimizedStep
@@ -201,17 +209,19 @@ export default function CraftingOptimizer() {
         newSet.delete(stepIndex);
         return newSet;
       });
-
       setInventory((prev) => {
         const newInventory = { ...prev };
         step.requirements.forEach((req: RequirementInfo) => {
           newInventory[req.item] = (newInventory[req.item] || 0) + req.quantity;
         });
+        newInventory[step.name] = Math.max(
+          0,
+          (newInventory[step.name] || 0) - step.quantity
+        );
         return newInventory;
       });
     } else {
       setCompletedSteps((prev) => new Set([...prev, stepIndex]));
-
       setInventory((prev) => {
         const newInventory = { ...prev };
         step.requirements.forEach((req: RequirementInfo) => {
@@ -222,6 +232,8 @@ export default function CraftingOptimizer() {
             );
           }
         });
+        newInventory[step.name] =
+          (newInventory[step.name] || 0) + step.quantity;
         return newInventory;
       });
     }
@@ -361,8 +373,16 @@ export default function CraftingOptimizer() {
                       key={item}
                       className="group bg-gray-800 border border-gray-700 rounded-xl p-3 sm:p-4 hover:bg-gray-750 hover:border-blue-500/50 transition-all duration-200"
                     >
+                      {" "}
                       <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-2 sm:mb-3 group-hover:text-white transition-colors">
-                        {formatItemName(item)}
+                        <div className="flex justify-between items-center">
+                          <span>{formatItemName(item)}</span>
+                          {getItemPrice(item) > 0 && (
+                            <span className="text-xs text-green-400 font-mono">
+                              ${getItemPrice(item)}
+                            </span>
+                          )}
+                        </div>
                       </label>
                       <input
                         type="number"
