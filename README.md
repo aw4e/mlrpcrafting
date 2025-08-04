@@ -27,7 +27,7 @@ Pastikan Anda telah menginstall [Bun](https://bun.sh/) di sistem Anda.
 1. Clone repository ini:
 
 ```bash
-git clone https://github.com/yourusername/rpcalc.git
+git clone https://github.com/aw4e/rpcalc.git
 cd rpcalc
 ```
 
