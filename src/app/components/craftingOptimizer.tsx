@@ -1,6 +1,11 @@
 "use client";
 
-import { Inventory, OptimizationResult } from "@/types";
+import {
+  Inventory,
+  OptimizationResult,
+  OptimizedStep,
+  RequirementInfo,
+} from "@/types";
 import { useState } from "react";
 import Image from "next/image";
 import {
@@ -184,7 +189,10 @@ export default function CraftingOptimizer() {
   const getTotalItems = (): number => {
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   };
-  const toggleStepCompletion = (stepIndex: number, step: any): void => {
+  const toggleStepCompletion = (
+    stepIndex: number,
+    step: OptimizedStep
+  ): void => {
     const isCompleted = completedSteps.has(stepIndex);
 
     if (isCompleted) {
@@ -196,7 +204,7 @@ export default function CraftingOptimizer() {
 
       setInventory((prev) => {
         const newInventory = { ...prev };
-        step.requirements.forEach((req: any) => {
+        step.requirements.forEach((req: RequirementInfo) => {
           newInventory[req.item] = (newInventory[req.item] || 0) + req.quantity;
         });
         return newInventory;
@@ -206,7 +214,7 @@ export default function CraftingOptimizer() {
 
       setInventory((prev) => {
         const newInventory = { ...prev };
-        step.requirements.forEach((req: any) => {
+        step.requirements.forEach((req: RequirementInfo) => {
           if (newInventory[req.item]) {
             newInventory[req.item] = Math.max(
               0,
@@ -581,7 +589,7 @@ export default function CraftingOptimizer() {
                                       Requirements:
                                     </strong>{" "}
                                     {step.requirements
-                                      .map((req: any) => {
+                                      .map((req: RequirementInfo) => {
                                         const available =
                                           inventory[req.item] || 0;
                                         const hasEnough =
@@ -603,8 +611,12 @@ export default function CraftingOptimizer() {
                                           </span>
                                         );
                                       })
-                                      .reduce((prev: any, curr: any) =>
-                                        prev ? [prev, ", ", curr] : curr
+                                      .reduce(
+                                        (
+                                          prev: React.ReactNode,
+                                          curr: React.ReactNode
+                                        ) => (prev ? [prev, ", ", curr] : curr),
+                                        null as React.ReactNode
                                       )}
                                   </div>
                                 )}
