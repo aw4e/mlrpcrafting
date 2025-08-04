@@ -229,11 +229,11 @@ export default function CraftingOptimizer() {
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity -z-10"></div>
             </button>
-          </div>
+          </div>{" "}
         </div>
       </div>
 
-      <div className="max-w-full mx-auto px-3 sm:px-6 py-4">
+      <div className="max-w-full mx-auto px-3 sm:px-6">
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-8">
           {/* Left Panel - Inventory Input */}
           <div className="xl:col-span-2">
