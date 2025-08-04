@@ -71,8 +71,8 @@ function calculateDependencyChain(
   }
 
   const requirements = itemData.require || {};
-  let totalRawMaterials: Record<string, number> = {};
-  let allProductionSteps: ProductionStep[] = [];
+  const totalRawMaterials: Record<string, number> = {};
+  const allProductionSteps: ProductionStep[] = [];
   let totalTime = quantity * 15;
   let totalProfit = itemData.price * quantity;
 
@@ -153,13 +153,12 @@ function calculateMaxQuantity(
 function optimizeWithDependencies(
   inventoryInput: Inventory
 ): OptimizationResult {
-  // Create inventory object from input
   const inventory: Inventory = {};
   allMaterials.forEach((item) => {
     inventory[item] = inventoryInput[item] || 0;
   });
 
-  let inv = { ...inventory };
+  const inv = { ...inventory };
   const allProductionSteps: OptimizedStep[] = [];
   let totalProfit = 0;
   let totalTime = 0;
