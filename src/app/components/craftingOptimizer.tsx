@@ -186,13 +186,15 @@ export default function CraftingOptimizer() {
 
   const CategoryIcon =
     categoryIcons[activeCategory as keyof typeof categoryIcons];
+
   return (
-    <div className="font-mono bg-gray-950">
+    <div className="min-h-screen font-mono bg-gray-950">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 shadow-2xl">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
+              {" "}
               <div className="p-2">
                 <Image
                   src="/motionlife.gif"
@@ -229,11 +231,11 @@ export default function CraftingOptimizer() {
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity -z-10"></div>
             </button>
-          </div>{" "}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-full mx-auto px-3 sm:px-6">
+      <div className="max-w-full mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-8">
           {/* Left Panel - Inventory Input */}
           <div className="xl:col-span-2">
@@ -483,7 +485,7 @@ export default function CraftingOptimizer() {
                                   <div className="text-xs sm:text-sm text-gray-300 mb-3 bg-gray-900/50 p-2 sm:p-3 rounded-lg border border-gray-600">
                                     <strong className="text-blue-300">
                                       Requirements:
-                                    </strong>
+                                    </strong>{" "}
                                     {step.requirements
                                       .map(
                                         (req) =>
@@ -558,7 +560,7 @@ export default function CraftingOptimizer() {
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                       Ready to Optimize
-                    </h3>
+                    </h3>{" "}
                     <p className="text-gray-400 text-sm sm:text-lg max-w-md mx-auto px-4">
                       Enter your inventory quantities and click
                       &quot;Calculate&quot; to discover the most profitable
