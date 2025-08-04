@@ -16,7 +16,7 @@ import {
 const typedMiningData = miningData as MiningData;
 
 const allMaterials: string[] = [
-  "uncut_copper",
+  "copper_ore",
   "iron_ore",
   "gold_ore",
   "silver_ore",
@@ -59,7 +59,6 @@ function calculateDependencyChain(
 
   const allItems = { ...miningData.tambang, ...miningData.perhiasan };
   const itemData = allItems[itemName];
-
   if (!itemData) {
     memo[key] = {
       rawMaterials: { [itemName]: quantity },
@@ -84,7 +83,6 @@ function calculateDependencyChain(
       miningData,
       memo
     );
-
     totalTime += depChain.totalTime;
     totalProfit += depChain.totalProfit;
 
@@ -164,7 +162,6 @@ function optimizeWithDependencies(
   let totalTime = 0;
 
   const allItems = { ...typedMiningData.tambang, ...typedMiningData.perhiasan };
-
   const readyItems: ReadyItem[] = [];
   Object.entries(allItems).forEach(([name, data]) => {
     const req = data.require || {};

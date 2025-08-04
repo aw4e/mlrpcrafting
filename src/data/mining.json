@@ -6,7 +6,7 @@
     },
     "copper_ingot": {
       "require": {
-        "uncut_copper": 2
+        "copper_ore": 2
       },
       "price": 26
     },
