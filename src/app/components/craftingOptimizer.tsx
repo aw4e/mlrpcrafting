@@ -2,8 +2,8 @@
 
 import { Inventory, OptimizationResult } from "@/types";
 import { useState } from "react";
+import Image from "next/image";
 import {
-  Calculator,
   Package,
   Zap,
   TrendingUp,
@@ -194,10 +194,13 @@ export default function CraftingOptimizer() {
         <div className="max-w-full mx-auto px-3 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
+              {" "}
               <div className="p-2">
-                <img
+                <Image
                   src="/motionlife.gif"
                   alt="Crafting Calculator"
+                  width={68}
+                  height={68}
                   className="h-12 w-12 sm:h-17 sm:w-17 object-contain"
                 />
               </div>
@@ -557,10 +560,11 @@ export default function CraftingOptimizer() {
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
                       Ready to Optimize
-                    </h3>
+                    </h3>{" "}
                     <p className="text-gray-400 text-sm sm:text-lg max-w-md mx-auto px-4">
-                      Enter your inventory quantities and click "Calculate" to
-                      discover the most profitable crafting strategy
+                      Enter your inventory quantities and click
+                      &quot;Calculate&quot; to discover the most profitable
+                      crafting strategy
                     </p>
                   </div>
                 )}

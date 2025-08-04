@@ -265,10 +265,9 @@ function optimizeWithDependencies(
         }
       }
     }
-
     Object.values(stepsByItem).forEach((step) => {
       const requirementStrings: RequirementInfo[] = step.requirements.map(
-        (req: { item: string; quantity: any }) => ({
+        (req: { item: string; quantity: number }) => ({
           item: req.item,
           displayName: fmt(req.item),
           quantity: req.quantity,
@@ -291,13 +290,12 @@ function optimizeWithDependencies(
     totalProfit += bestChain.finalProfit;
     totalTime += chain.totalTime;
   }
-
   const remainingItems: RemainingMaterial[] = Object.entries(inv)
-    .filter(([name, qty]) => qty > 0)
+    .filter(([, qty]) => qty > 0)
     .sort(([, a], [, b]) => b - a)
-    .map(([name, qty]) => ({
-      name,
-      displayName: fmt(name),
+    .map(([itemName, qty]) => ({
+      name: itemName,
+      displayName: fmt(itemName),
       quantity: qty,
     }));
 
