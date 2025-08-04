@@ -5,6 +5,7 @@ import {
   OptimizationResult,
   OptimizedStep,
   RequirementInfo,
+  MiningData,
 } from "@/types";
 import { useState } from "react";
 import Image from "next/image";
@@ -191,9 +192,10 @@ export default function CraftingOptimizer() {
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   };
   const getItemPrice = (itemName: string): number => {
+    const typedMiningData = miningData as MiningData;
     const allItems = {
-      ...(miningData as any).tambang,
-      ...(miningData as any).perhiasan,
+      ...typedMiningData.tambang,
+      ...typedMiningData.perhiasan,
     };
     return allItems[itemName]?.price || 0;
   };
