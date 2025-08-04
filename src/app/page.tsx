@@ -2,10 +2,12 @@ import CraftingOptimizer from "@/app/components/craftingOptimizer";
 
 export default function Home() {
   return (
-    <div>
-      <CraftingOptimizer />
+    <div className="min-h-screen flex flex-col bg-gray-950">
+      <div className="flex-1">
+        <CraftingOptimizer />
+      </div>
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 mt-8">
+      <footer className="bg-gray-900 border-t border-gray-800 mt-auto">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">

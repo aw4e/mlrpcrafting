@@ -183,12 +183,11 @@ export default function CraftingOptimizer() {
   const getTotalItems = (): number => {
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   };
-
   const CategoryIcon =
     categoryIcons[activeCategory as keyof typeof categoryIcons];
 
   return (
-    <div className="min-h-screen font-mono bg-gray-950">
+    <div className="font-mono">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 shadow-2xl">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-4">
