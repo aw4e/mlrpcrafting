@@ -29,9 +29,9 @@ export default function MaintenancePage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-4">
             Under Maintenance
-          </h1>
+          </h1>{" "}
           <p className="text-gray-400 text-lg mb-6">
-            We're currently performing some maintenance on our crafting
+            We&apos;re currently performing some maintenance on our crafting
             optimizer.
           </p>
           <p className="text-gray-500">
@@ -41,8 +41,9 @@ export default function MaintenancePage() {
         </div>
 
         <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          {" "}
           <h2 className="text-xl font-semibold text-white mb-3">
-            What's happening?
+            What&apos;s happening?
           </h2>
           <ul className="text-gray-400 text-sm space-y-2 text-left">
             <li className="flex items-center">
