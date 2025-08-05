@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   CircleX,
   Hammer,
-  Archive,
   Coins,
   Timer,
   Activity,
@@ -89,12 +88,11 @@ const materialCategories = {
 };
 
 const categoryIcons = {
-  "Raw Materials": Archive,
+  "Raw Materials": Package,
   Ingots: Coins,
-  Chains: Activity,
   Rings: Target,
   Earrings: Sparkles,
-  Necklaces: Sparkles,
+  Necklaces: Activity,
 };
 
 const createEmptyInventory = (): Inventory => {
@@ -247,6 +245,61 @@ export default function CraftingOptimizer() {
 
   const CategoryIcon =
     categoryIcons[activeCategory as keyof typeof categoryIcons];
+
+  const getProfitTier = (
+    stepValue: number,
+    allSteps: OptimizedStep[]
+  ): string => {
+    if (allSteps.length === 0) return "medium";
+
+    const values = allSteps.map((step) => step.value).sort((a, b) => b - a);
+    const q1Index = Math.floor(values.length * 0.25);
+    const q3Index = Math.floor(values.length * 0.75);
+
+    const highThreshold = values[q1Index] || 0;
+    const lowThreshold = values[q3Index] || 0;
+
+    if (stepValue >= highThreshold) return "high";
+    if (stepValue <= lowThreshold) return "low";
+    return "medium";
+  };
+
+  const getProfitColors = (tier: string) => {
+    switch (tier) {
+      case "high":
+        return {
+          border: "border-green-500/70",
+          bg: "bg-green-900/30",
+          glow: "hover:shadow-green-500/30",
+          text: "text-green-300",
+          icon: "text-green-400",
+        };
+      case "medium":
+        return {
+          border: "border-blue-500/50",
+          bg: "bg-blue-900/20",
+          glow: "hover:shadow-blue-500/20",
+          text: "text-blue-300",
+          icon: "text-blue-400",
+        };
+      case "low":
+        return {
+          border: "border-orange-500/50",
+          bg: "bg-orange-900/20",
+          glow: "hover:shadow-orange-500/20",
+          text: "text-orange-300",
+          icon: "text-orange-400",
+        };
+      default:
+        return {
+          border: "border-gray-700",
+          bg: "bg-gray-800/50",
+          glow: "hover:shadow-gray-500/20",
+          text: "text-gray-300",
+          icon: "text-gray-400",
+        };
+    }
+  };
 
   return (
     <div className="font-mono">
@@ -499,8 +552,9 @@ export default function CraftingOptimizer() {
                     {/* Production Steps */}
                     {result.productionSteps.length > 0 && (
                       <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700 rounded-xl overflow-hidden">
+                        {" "}
                         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-700 bg-blue-900/20">
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center space-x-2">
                               <Hammer className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                               <h3 className="text-base sm:text-lg font-semibold text-blue-100">
@@ -508,126 +562,158 @@ export default function CraftingOptimizer() {
                                 {result.productionSteps.length})
                               </h3>
                             </div>
-                            {completedSteps.size > 0 && (
-                              <span className="text-xs text-green-400">
-                                {completedSteps.size} completed
-                              </span>
-                            )}
+
+                            <div className="flex items-center gap-4">
+                              {/* Profit Legend */}
+                              <div className="flex items-center space-x-3 text-xs">
+                                <div className="flex items-center space-x-1">
+                                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                                  <span className="text-green-300">
+                                    High Profit
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                                  <span className="text-blue-300">Medium</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
+                                  <span className="text-orange-300">Low</span>
+                                </div>
+                              </div>
+
+                              {completedSteps.size > 0 && (
+                                <span className="text-xs text-green-400">
+                                  {completedSteps.size} completed
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="p-4 sm:p-6">
                           <div className="space-y-3 sm:space-y-4 max-h-96 sm:max-h-[500px] overflow-y-auto custom-scrollbar">
-                            {result.productionSteps.map((step, index) => (
-                              <div
-                                key={index}
-                                className={`relative bg-gray-800/50 border rounded-xl p-4 sm:p-5 transition-all duration-200 ${
-                                  completedSteps.has(index)
-                                    ? "border-green-500/50 bg-green-900/20 opacity-75"
-                                    : "border-gray-700 hover:border-blue-500/50"
-                                }`}
-                              >
-                                {" "}
-                                {/* Mark as Done Button */}
-                                <div className="absolute top-3 right-3">
-                                  <button
-                                    onClick={() =>
-                                      toggleStepCompletion(index, step)
-                                    }
-                                    className={`p-2 ${
-                                      completedSteps.has(index)
-                                        ? "bg-yellow-600 hover:bg-yellow-700"
-                                        : "bg-blue-600 hover:bg-blue-700"
-                                    } text-white rounded-lg transition-colors group`}
-                                    title={
-                                      completedSteps.has(index)
-                                        ? "Unmark Step"
-                                        : "Mark as Done"
-                                    }
-                                  >
-                                    {completedSteps.has(index) ? (
-                                      <CircleX className="h-4 w-4" />
-                                    ) : (
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    )}
-                                  </button>
-                                </div>
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4 gap-2 pr-12">
-                                  <span
-                                    className={`font-semibold text-base sm:text-lg ${
-                                      completedSteps.has(index)
-                                        ? "text-green-300 line-through"
-                                        : "text-white"
-                                    }`}
-                                  >
-                                    {step.displayName} ×
-                                    {step.quantity.toLocaleString()}
-                                  </span>
-                                  <span
-                                    className={`font-bold text-lg sm:text-xl ${
-                                      completedSteps.has(index)
-                                        ? "text-green-300"
-                                        : "text-green-400"
-                                    }`}
-                                  >
-                                    {formatCurrency(step.value)}
-                                  </span>
-                                </div>
-                                {step.requirements.length > 0 && (
-                                  <div className="text-xs sm:text-sm text-gray-300 mb-3 bg-gray-900/50 p-2 sm:p-3 rounded-lg border border-gray-600">
-                                    <strong className="text-blue-300">
-                                      Requirements:
-                                    </strong>{" "}
-                                    {step.requirements
-                                      .map((req: RequirementInfo) => {
-                                        const available =
-                                          inventory[req.item] || 0;
-                                        const hasEnough =
-                                          available >= req.quantity;
+                            {result.productionSteps.map((step, index) => {
+                              const profitTier = getProfitTier(
+                                step.value,
+                                result.productionSteps
+                              );
+                              const profitColors = getProfitColors(profitTier);
 
-                                        return (
-                                          <span
-                                            key={req.item}
-                                            className={
-                                              hasEnough
-                                                ? "text-green-300"
-                                                : "text-red-300"
-                                            }
-                                          >
-                                            {req.displayName} ×
-                                            {req.quantity.toLocaleString()}
-                                            {!hasEnough &&
-                                              ` (need ${req.quantity - available} more)`}
-                                          </span>
-                                        );
-                                      })
-                                      .reduce(
-                                        (
-                                          prev: React.ReactNode,
-                                          curr: React.ReactNode
-                                        ) => (prev ? [prev, ", ", curr] : curr),
-                                        null as React.ReactNode
-                                      )}
-                                  </div>
-                                )}
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                  <div className="flex items-center space-x-2 text-gray-400">
-                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="text-xs sm:text-sm">
-                                      {step.timeFormatted}
+                              return (
+                                <div
+                                  key={index}
+                                  className={`relative rounded-xl p-4 sm:p-5 transition-all duration-300 ${profitColors.bg} ${profitColors.border} ${profitColors.glow} border-2 ${
+                                    completedSteps.has(index)
+                                      ? "border-green-500/70 bg-green-900/30 opacity-75"
+                                      : `${profitColors.border} hover:border-opacity-80`
+                                  }`}
+                                >
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4 gap-2">
+                                    <span
+                                      className={`font-semibold text-base sm:text-lg ${
+                                        completedSteps.has(index)
+                                          ? "text-green-300 line-through"
+                                          : `text-white`
+                                      }`}
+                                    >
+                                      {step.displayName} ×
+                                      {step.quantity.toLocaleString()}
                                     </span>
-                                  </div>{" "}
-                                  <div className="flex items-center space-x-2 text-green-400">
-                                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="text-xs sm:text-sm">
-                                      Total: {formatCurrency(step.value)}
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                      <span
+                                        className={`font-bold text-lg sm:text-xl ${
+                                          completedSteps.has(index)
+                                            ? "text-green-300"
+                                            : profitColors.text
+                                        }`}
+                                      >
+                                        {formatCurrency(step.value)}
+                                      </span>
+                                      <button
+                                        onClick={() =>
+                                          toggleStepCompletion(index, step)
+                                        }
+                                        className={`p-2 ${
+                                          completedSteps.has(index)
+                                            ? "bg-yellow-600 hover:bg-yellow-700"
+                                            : "bg-blue-600 hover:bg-blue-700"
+                                        } text-white rounded-lg transition-colors group`}
+                                        title={
+                                          completedSteps.has(index)
+                                            ? "Unmark Step"
+                                            : "Mark as Done"
+                                        }
+                                      >
+                                        {completedSteps.has(index) ? (
+                                          <CircleX className="h-4 w-4" />
+                                        ) : (
+                                          <CheckCircle2 className="h-4 w-4" />
+                                        )}
+                                      </button>
+                                    </div>
                                   </div>
+                                  {step.requirements.length > 0 && (
+                                    <div className="text-xs sm:text-sm text-gray-300 mb-3 bg-gray-900/50 p-2 sm:p-3 rounded-lg border border-gray-600">
+                                      <strong className="text-blue-300">
+                                        Requirements:
+                                      </strong>{" "}
+                                      {step.requirements
+                                        .map((req: RequirementInfo) => {
+                                          const available =
+                                            inventory[req.item] || 0;
+                                          const hasEnough =
+                                            available >= req.quantity;
+
+                                          return (
+                                            <span
+                                              key={req.item}
+                                              className={
+                                                hasEnough
+                                                  ? "text-green-300"
+                                                  : "text-red-300"
+                                              }
+                                            >
+                                              {req.displayName} ×
+                                              {req.quantity.toLocaleString()}
+                                              {!hasEnough &&
+                                                ` (need ${req.quantity - available} more)`}
+                                            </span>
+                                          );
+                                        })
+                                        .reduce(
+                                          (
+                                            prev: React.ReactNode,
+                                            curr: React.ReactNode
+                                          ) =>
+                                            prev ? [prev, ", ", curr] : curr,
+                                          null as React.ReactNode
+                                        )}
+                                    </div>
+                                  )}{" "}
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                    <div className="flex items-center space-x-2 text-gray-400">
+                                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                      <span className="text-xs sm:text-sm">
+                                        {step.timeFormatted}
+                                      </span>
+                                    </div>
+                                    <div
+                                      className={`flex items-center space-x-2 ${profitColors.text}`}
+                                    >
+                                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                                      <span className="text-xs sm:text-sm font-semibold">
+                                        $
+                                        {Math.round(step.value / step.quantity)}
+                                        /unit
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {completedSteps.has(index) && (
+                                    <div className="absolute inset-0 bg-green-500/10 rounded-xl pointer-events-none"></div>
+                                  )}
                                 </div>
-                                {completedSteps.has(index) && (
-                                  <div className="absolute inset-0 bg-green-500/10 rounded-xl pointer-events-none"></div>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -662,37 +748,6 @@ export default function CraftingOptimizer() {
                         </div>
                       </div>
                     )}{" "}
-                    {/* Remaining Materials */}
-                    {result.remainingMaterials.length > 0 && (
-                      <div className="bg-gradient-to-br from-yellow-900/30 to-orange-900/30 border border-yellow-700 rounded-xl overflow-hidden">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-yellow-700 bg-yellow-900/20">
-                          <div className="flex items-center space-x-2">
-                            <Archive className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-                            <h3 className="text-base sm:text-lg font-semibold text-yellow-100">
-                              Remaining Materials (
-                              {result.remainingMaterials.length})
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="p-4 sm:p-6">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-3 gap-3 sm:gap-4 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
-                            {result.remainingMaterials.map((item, index) => (
-                              <div
-                                key={index}
-                                className="bg-gray-800/50 p-3 sm:p-4 rounded-lg border border-gray-700 text-center hover:border-yellow-500/50 transition-all duration-200"
-                              >
-                                <div className="font-medium text-gray-200 text-xs sm:text-sm mb-1">
-                                  {item.displayName}
-                                </div>
-                                <div className="text-lg sm:text-xl font-bold text-yellow-400">
-                                  {item.quantity.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 sm:py-16">

@@ -9,7 +9,6 @@ import {
   OptimizedStep,
   ProductionStep,
   SellableItem,
-  RemainingMaterial,
 } from "@/types";
 
 const typedMiningData = miningData as MiningData;
@@ -125,6 +124,101 @@ function calculateDependencyChain(
   return result;
 }
 
+function calculateDependencyChainWithInventory(
+  itemName: string,
+  quantity: number,
+  miningData: MiningData,
+  currentInventory: Inventory,
+  memo: Record<string, DependencyChain> = {}
+): DependencyChain {
+  const key = `${itemName}_${quantity}_${JSON.stringify(currentInventory)}`;
+  if (memo[key]) return memo[key];
+
+  const allItems = { ...miningData.tambang, ...miningData.perhiasan };
+  const itemData = allItems[itemName];
+
+  if (!itemData) {
+    memo[key] = {
+      rawMaterials: { [itemName]: quantity },
+      productionSteps: [],
+      totalTime: 0,
+      totalProfit: 0,
+    };
+    return memo[key];
+  }
+
+  const requirements = itemData.require || {};
+  let totalRawMaterials: Record<string, number> = {};
+  let allProductionSteps: ProductionStep[] = [];
+  let totalTime = quantity * 15;
+  let totalProfit = itemData.price * quantity;
+
+  if (Object.keys(requirements).length === 0) {
+    memo[key] = {
+      rawMaterials: { [itemName]: quantity },
+      productionSteps: [],
+      totalTime: 0,
+      totalProfit: 0,
+    };
+    return memo[key];
+  }
+
+  for (const [reqItem, reqQty] of Object.entries(requirements)) {
+    const totalReqQty = (reqQty as number) * quantity;
+    const availableInInventory = currentInventory[reqItem] || 0;
+
+    if (availableInInventory >= totalReqQty) {
+      totalRawMaterials[reqItem] =
+        (totalRawMaterials[reqItem] || 0) + totalReqQty;
+    } else {
+      const needToCraft = totalReqQty - availableInInventory;
+
+      if (availableInInventory > 0) {
+        totalRawMaterials[reqItem] =
+          (totalRawMaterials[reqItem] || 0) + availableInInventory;
+      }
+
+      const depChain = calculateDependencyChain(
+        reqItem,
+        needToCraft,
+        miningData,
+        memo
+      );
+      totalTime += depChain.totalTime;
+      totalProfit += depChain.totalProfit;
+
+      for (const [rawItem, rawQty] of Object.entries(depChain.rawMaterials)) {
+        totalRawMaterials[rawItem] = (totalRawMaterials[rawItem] || 0) + rawQty;
+      }
+
+      allProductionSteps.push(...depChain.productionSteps);
+    }
+  }
+
+  if (Object.keys(requirements).length > 0) {
+    allProductionSteps.push({
+      itemName,
+      quantity,
+      requirements: Object.entries(requirements).map(([item, qty]) => ({
+        item,
+        quantity: (qty as number) * quantity,
+      })),
+      time: quantity * 15,
+      profit: itemData.price * quantity,
+    });
+  }
+
+  const result: DependencyChain = {
+    rawMaterials: totalRawMaterials,
+    productionSteps: allProductionSteps,
+    totalTime,
+    totalProfit,
+  };
+
+  memo[key] = result;
+  return result;
+}
+
 function canAffordChain(
   rawMaterialsNeeded: Record<string, number>,
   currentInventory: Inventory
@@ -142,14 +236,40 @@ function calculateMaxQuantity(
   miningData: MiningData,
   currentInventory: Inventory
 ): number {
-  const singleItemChain = calculateDependencyChain(itemName, 1, miningData);
-  const rawNeeded = singleItemChain.rawMaterials;
+  const allItems = { ...miningData.tambang, ...miningData.perhiasan };
+  const itemData = allItems[itemName];
 
+  if (!itemData || !itemData.require) {
+    return currentInventory[itemName] || 0;
+  }
+
+  const requirements = itemData.require;
   let maxQty = Infinity;
-  for (const [rawItem, neededPerUnit] of Object.entries(rawNeeded)) {
-    const available = currentInventory[rawItem] || 0;
+
+  for (const [reqItem, reqQty] of Object.entries(requirements)) {
+    const neededPerUnit = reqQty as number;
+    const availableInInventory = currentInventory[reqItem] || 0;
+
     if (neededPerUnit > 0) {
-      maxQty = Math.min(maxQty, Math.floor(available / neededPerUnit));
+      const reqItemData = allItems[reqItem];
+      if (
+        reqItemData &&
+        reqItemData.require &&
+        Object.keys(reqItemData.require).length > 0
+      ) {
+        const maxCraftable = calculateMaxQuantity(
+          reqItem,
+          miningData,
+          currentInventory
+        );
+        const totalAvailable = availableInInventory + maxCraftable;
+        maxQty = Math.min(maxQty, Math.floor(totalAvailable / neededPerUnit));
+      } else {
+        maxQty = Math.min(
+          maxQty,
+          Math.floor(availableInInventory / neededPerUnit)
+        );
+      }
     }
   }
 
@@ -180,13 +300,17 @@ function optimizeWithDependencies(
       finalProfit: number;
     } | null = null;
     let bestTotalProfit = 0;
-
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
       const maxQty = calculateMaxQuantity(itemName, typedMiningData, inv);
       if (maxQty <= 0) continue;
 
-      const chain = calculateDependencyChain(itemName, maxQty, typedMiningData);
+      const chain = calculateDependencyChainWithInventory(
+        itemName,
+        maxQty,
+        typedMiningData,
+        inv
+      );
 
       if (!canAffordChain(chain.rawMaterials, inv)) continue;
 
@@ -273,12 +397,10 @@ function optimizeWithDependencies(
     totalProfit += bestChain.finalProfit;
     totalTime += chain.totalTime;
   }
-
   const productionSteps = allProductionSteps.map((step, index) => ({
     ...step,
     step: index + 1,
   }));
-  const remainingRawMaterials: RemainingMaterial[] = [];
   const sellableItems: SellableItem[] = [];
   let totalSellValue = 0;
 
@@ -297,22 +419,10 @@ function optimizeWithDependencies(
           value: value,
         });
         totalSellValue += value;
-      } else {
-        const hasRequirements =
-          itemData?.require && Object.keys(itemData.require).length > 0;
-        if (!hasRequirements) {
-          remainingRawMaterials.push({
-            name: name,
-            displayName: fmt(name),
-            quantity: qty,
-          });
-        }
       }
     });
 
   sellableItems.sort((a, b) => b.value - a.value);
-  remainingRawMaterials.sort((a, b) => b.quantity - a.quantity);
-
   return {
     success: true,
     data: {
@@ -324,7 +434,6 @@ function optimizeWithDependencies(
       },
       sellableItems,
       productionSteps,
-      remainingMaterials: remainingRawMaterials,
     },
   };
 }
