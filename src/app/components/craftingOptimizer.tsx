@@ -197,10 +197,7 @@ export default function CraftingOptimizer() {
     };
     return allItems[itemName]?.price || 0;
   };
-  const toggleStepCompletion = (
-    stepIndex: number,
-    step: OptimizedStep
-  ): void => {
+  const toggleStepCompletion = (stepIndex: number): void => {
     const isCompleted = completedSteps.has(stepIndex);
 
     if (isCompleted) {
@@ -209,38 +206,16 @@ export default function CraftingOptimizer() {
         newSet.delete(stepIndex);
         return newSet;
       });
-      setInventory((prev) => {
-        const newInventory = { ...prev };
-        step.requirements.forEach((req: RequirementInfo) => {
-          newInventory[req.item] = (newInventory[req.item] || 0) + req.quantity;
-        });
-        newInventory[step.name] = Math.max(
-          0,
-          (newInventory[step.name] || 0) - step.quantity
-        );
-        return newInventory;
-      });
     } else {
       setCompletedSteps((prev) => new Set([...prev, stepIndex]));
-      setInventory((prev) => {
-        const newInventory = { ...prev };
-        step.requirements.forEach((req: RequirementInfo) => {
-          if (newInventory[req.item]) {
-            newInventory[req.item] = Math.max(
-              0,
-              newInventory[req.item] - req.quantity
-            );
-          }
-        });
-        newInventory[step.name] =
-          (newInventory[step.name] || 0) + step.quantity;
-        return newInventory;
-      });
     }
   };
 
   const resetCompletedSteps = (): void => {
     setCompletedSteps(new Set());
+    if (result) {
+      handleOptimize();
+    }
   };
 
   const CategoryIcon =
@@ -371,7 +346,6 @@ export default function CraftingOptimizer() {
                   </div>
                 </div>
               </div>
-
               {/* Category Selector */}
               <div className="p-4 sm:p-6 border-b border-gray-800 bg-gray-800/50">
                 <div className="relative">
@@ -416,11 +390,10 @@ export default function CraftingOptimizer() {
                     </div>
                   )}
                 </div>
-              </div>
-
+              </div>{" "}
               {/* Items Grid */}
               <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 max-h-64 sm:max-h-96 overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 max-h-80 sm:max-h-[600px] overflow-y-auto custom-scrollbar">
                   {materialCategories[
                     activeCategory as keyof typeof materialCategories
                   ].map((item) => (
@@ -592,6 +565,7 @@ export default function CraftingOptimizer() {
                         </div>
                         <div className="p-4 sm:p-6">
                           <div className="space-y-3 sm:space-y-4 max-h-96 sm:max-h-[500px] overflow-y-auto custom-scrollbar">
+                            {" "}
                             {result.productionSteps.map((step, index) => {
                               const profitTier = getProfitTier(
                                 step.value,
@@ -631,7 +605,7 @@ export default function CraftingOptimizer() {
                                       </span>
                                       <button
                                         onClick={() =>
-                                          toggleStepCompletion(index, step)
+                                          toggleStepCompletion(index)
                                         }
                                         className={`p-2 ${
                                           completedSteps.has(index)
@@ -658,28 +632,15 @@ export default function CraftingOptimizer() {
                                         Requirements:
                                       </strong>{" "}
                                       {step.requirements
-                                        .map((req: RequirementInfo) => {
-                                          const available =
-                                            inventory[req.item] || 0;
-                                          const hasEnough =
-                                            available >= req.quantity;
-
-                                          return (
-                                            <span
-                                              key={req.item}
-                                              className={
-                                                hasEnough
-                                                  ? "text-green-300"
-                                                  : "text-red-300"
-                                              }
-                                            >
-                                              {req.displayName} ×
-                                              {req.quantity.toLocaleString()}
-                                              {!hasEnough &&
-                                                ` (need ${req.quantity - available} more)`}
-                                            </span>
-                                          );
-                                        })
+                                        .map((req: RequirementInfo) => (
+                                          <span
+                                            key={req.item}
+                                            className="text-gray-300"
+                                          >
+                                            {req.displayName} ×
+                                            {req.quantity.toLocaleString()}
+                                          </span>
+                                        ))
                                         .reduce(
                                           (
                                             prev: React.ReactNode,
