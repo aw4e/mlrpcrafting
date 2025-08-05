@@ -54,8 +54,10 @@ function calculateDependencyChain(
 ): DependencyChain {
   const key = `${itemName}_${quantity}`;
   if (memo[key]) return memo[key];
+
   const allItems = { ...miningData.tambang, ...miningData.perhiasan };
   const itemData = allItems[itemName];
+
   if (!itemData) {
     memo[key] = {
       rawMaterials: { [itemName]: quantity },
@@ -67,8 +69,8 @@ function calculateDependencyChain(
   }
 
   const requirements = itemData.require || {};
-  let totalRawMaterials: Record<string, number> = {};
-  let allProductionSteps: ProductionStep[] = [];
+  const totalRawMaterials: Record<string, number> = {};
+  const allProductionSteps: ProductionStep[] = [];
   let totalTime = quantity * 15;
   let totalProfit = itemData.price * quantity;
 
@@ -148,8 +150,8 @@ function calculateDependencyChainWithInventory(
   }
 
   const requirements = itemData.require || {};
-  let totalRawMaterials: Record<string, number> = {};
-  let allProductionSteps: ProductionStep[] = [];
+  const totalRawMaterials: Record<string, number> = {};
+  const allProductionSteps: ProductionStep[] = [];
   let totalTime = quantity * 15;
   let totalProfit = itemData.price * quantity;
 
@@ -284,7 +286,7 @@ function optimizeWithDependencies(
     inventory[item] = inventoryInput[item] || 0;
   });
 
-  let inv = { ...inventory };
+  const inv = { ...inventory };
   const allProductionSteps: OptimizedStep[] = [];
   let totalProfit = 0;
   let totalTime = 0;
@@ -300,6 +302,7 @@ function optimizeWithDependencies(
       finalProfit: number;
     } | null = null;
     let bestTotalProfit = 0;
+
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
       const maxQty = calculateMaxQuantity(itemName, typedMiningData, inv);
@@ -314,17 +317,17 @@ function optimizeWithDependencies(
 
       if (!canAffordChain(chain.rawMaterials, inv)) continue;
 
-      const totalProfit = chain.totalProfit;
+      const chainTotalProfit = chain.totalProfit;
 
-      if (totalProfit > bestTotalProfit) {
+      if (chainTotalProfit > bestTotalProfit) {
         bestChain = {
           itemName,
           maxQty,
           chain,
-          totalProfit,
+          totalProfit: chainTotalProfit,
           finalProfit: itemData.price * maxQty,
         };
-        bestTotalProfit = totalProfit;
+        bestTotalProfit = chainTotalProfit;
       }
     }
 
@@ -335,6 +338,7 @@ function optimizeWithDependencies(
     for (const [rawItem, qty] of Object.entries(chain.rawMaterials)) {
       inv[rawItem] = (inv[rawItem] || 0) - qty;
     }
+
     const stepsByItem: Record<
       string,
       {
@@ -345,6 +349,7 @@ function optimizeWithDependencies(
         requirements: Array<{ item: string; quantity: number }>;
       }
     > = {};
+
     for (const step of chain.productionSteps) {
       inv[step.itemName] = (inv[step.itemName] || 0) + step.quantity;
 
@@ -397,6 +402,7 @@ function optimizeWithDependencies(
     totalProfit += bestChain.finalProfit;
     totalTime += chain.totalTime;
   }
+
   const productionSteps = allProductionSteps.map((step, index) => ({
     ...step,
     step: index + 1,
@@ -405,15 +411,15 @@ function optimizeWithDependencies(
   let totalSellValue = 0;
 
   Object.entries(inv)
-    .filter(([name, qty]) => qty > 0)
-    .forEach(([name, qty]) => {
-      const itemData = allItems[name];
+    .filter(([, qty]) => qty > 0)
+    .forEach(([itemName, qty]) => {
+      const itemData = allItems[itemName];
       const price = itemData?.price || 0;
 
       if (price > 0) {
         const value = price * qty;
         sellableItems.push({
-          name: fmt(name),
+          name: fmt(itemName),
           quantity: qty,
           price: price,
           value: value,
@@ -423,6 +429,7 @@ function optimizeWithDependencies(
     });
 
   sellableItems.sort((a, b) => b.value - a.value);
+
   return {
     success: true,
     data: {
