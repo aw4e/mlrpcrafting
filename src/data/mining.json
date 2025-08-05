@@ -189,6 +189,13 @@
       },
       "price": 86
     },
+    "emerald_earring_silver": {
+      "require": {
+        "silver_earring": 1,
+        "emerald": 2
+      },
+      "price": 163
+    },
     "gold_chain": {
       "require": {
         "gold_ingot": 2
