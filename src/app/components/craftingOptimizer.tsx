@@ -84,6 +84,7 @@ const materialCategories = {
     "diamond_necklace_silver",
     "ruby_necklace_silver",
     "emerald_necklace_silver",
+    "sapphire_necklace_silver",
   ],
 };
 
