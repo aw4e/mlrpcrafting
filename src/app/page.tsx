@@ -7,7 +7,7 @@ export default function Home() {
         <CraftingOptimizer />
       </div>
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 mt-auto">
+      <footer className="bg-gray-900 border-t border-gray-800 mt-6">
         <div className="max-w-full mx-auto px-3 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">

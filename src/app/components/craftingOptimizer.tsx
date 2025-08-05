@@ -465,7 +465,6 @@ export default function CraftingOptimizer() {
                           </div>
                         </div>
                       </div>
-
                       <div className="group bg-gradient-to-br from-blue-900/50 to-cyan-900/50 border border-blue-700 rounded-xl p-4 sm:p-5 hover:shadow-blue-500/20 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <div className="p-1.5 sm:p-2 bg-blue-600 rounded-lg">
@@ -480,55 +479,23 @@ export default function CraftingOptimizer() {
                             </p>
                           </div>
                         </div>
-                      </div>
-
+                      </div>{" "}
                       <div className="group bg-gradient-to-br from-purple-900/50 to-pink-900/50 border border-purple-700 rounded-xl p-4 sm:p-5 hover:shadow-purple-500/20 hover:shadow-lg transition-all duration-300 sm:col-span-1 col-span-1">
                         <div className="flex items-center">
                           <div className="p-1.5 sm:p-2 bg-purple-600 rounded-lg">
-                            <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                            <Coins className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                           </div>
                           <div className="ml-3 sm:ml-4">
                             <p className="text-xs sm:text-sm font-medium text-purple-300">
-                              Per Hour
+                              Total Value
                             </p>
                             <p className="text-lg sm:text-2xl font-bold text-purple-100">
-                              {formatCurrency(result.summary.profitPerHour)}
+                              {formatCurrency(result.summary.totalSellValue)}
                             </p>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    {/* Ready Items */}
-                    {result.readyItems.length > 0 && (
-                      <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-700 rounded-xl overflow-hidden">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-green-700 bg-green-900/20">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                            <h3 className="text-base sm:text-lg font-semibold text-green-100">
-                              Ready to Sell ({result.readyItems.length})
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="p-4 sm:p-6">
-                          <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
-                            {result.readyItems.map((item, index) => (
-                              <div
-                                key={index}
-                                className="flex justify-between items-center bg-gray-800/50 p-3 sm:p-4 rounded-lg border border-gray-700 hover:border-green-500/50 transition-all duration-200"
-                              >
-                                <span className="font-medium text-gray-200 text-sm sm:text-base">
-                                  {item.displayName} ×
-                                  {item.quantity.toLocaleString()}
-                                </span>
-                                <span className="font-bold text-green-400 text-base sm:text-lg">
-                                  {formatCurrency(item.value)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}{" "}
+                    </div>{" "}
                     {/* Production Steps */}
                     {result.productionSteps.length > 0 && (
                       <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700 rounded-xl overflow-hidden">
@@ -648,11 +615,11 @@ export default function CraftingOptimizer() {
                                     <span className="text-xs sm:text-sm">
                                       {step.timeFormatted}
                                     </span>
-                                  </div>
+                                  </div>{" "}
                                   <div className="flex items-center space-x-2 text-green-400">
                                     <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                                     <span className="text-xs sm:text-sm">
-                                      {formatCurrency(step.profitPerMinute)}/min
+                                      Total: {formatCurrency(step.value)}
                                     </span>
                                   </div>
                                 </div>
@@ -665,6 +632,36 @@ export default function CraftingOptimizer() {
                         </div>
                       </div>
                     )}
+                    {/* Sellable Items */}
+                    {result.sellableItems.length > 0 && (
+                      <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-700 rounded-xl overflow-hidden">
+                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-green-700 bg-green-900/20">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
+                            <h3 className="text-base sm:text-lg font-semibold text-green-100">
+                              Sellable Items ({result.sellableItems.length})
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="p-4 sm:p-6">
+                          <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
+                            {result.sellableItems.map((item, index) => (
+                              <div
+                                key={index}
+                                className="flex justify-between items-center bg-gray-800/50 p-3 sm:p-4 rounded-lg border border-gray-700 hover:border-green-500/50 transition-all duration-200"
+                              >
+                                <span className="font-medium text-gray-200 text-sm sm:text-base">
+                                  {item.name} ×{item.quantity.toLocaleString()}
+                                </span>
+                                <span className="font-bold text-green-400 text-base sm:text-lg">
+                                  {formatCurrency(item.value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}{" "}
                     {/* Remaining Materials */}
                     {result.remainingMaterials.length > 0 && (
                       <div className="bg-gradient-to-br from-yellow-900/30 to-orange-900/30 border border-yellow-700 rounded-xl overflow-hidden">

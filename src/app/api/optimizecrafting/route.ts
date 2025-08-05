@@ -8,9 +8,8 @@ import {
   OptimizationResult,
   OptimizedStep,
   ProductionStep,
-  ReadyItem,
+  SellableItem,
   RemainingMaterial,
-  RequirementInfo,
 } from "@/types";
 
 const typedMiningData = miningData as MiningData;
@@ -33,7 +32,7 @@ const allMaterials: string[] = [
 const fmt = (name: string): string =>
   name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-const formatTime = (s: number): string => {
+const time = (s: number): string => {
   if (s === 0) return "0s";
 
   const hours = Math.floor(s / 3600);
@@ -56,7 +55,6 @@ function calculateDependencyChain(
 ): DependencyChain {
   const key = `${itemName}_${quantity}`;
   if (memo[key]) return memo[key];
-
   const allItems = { ...miningData.tambang, ...miningData.perhiasan };
   const itemData = allItems[itemName];
   if (!itemData) {
@@ -70,10 +68,20 @@ function calculateDependencyChain(
   }
 
   const requirements = itemData.require || {};
-  const totalRawMaterials: Record<string, number> = {};
-  const allProductionSteps: ProductionStep[] = [];
+  let totalRawMaterials: Record<string, number> = {};
+  let allProductionSteps: ProductionStep[] = [];
   let totalTime = quantity * 15;
   let totalProfit = itemData.price * quantity;
+
+  if (Object.keys(requirements).length === 0) {
+    memo[key] = {
+      rawMaterials: { [itemName]: quantity },
+      productionSteps: [],
+      totalTime: 0,
+      totalProfit: 0,
+    };
+    return memo[key];
+  }
 
   for (const [reqItem, reqQty] of Object.entries(requirements)) {
     const totalReqQty = (reqQty as number) * quantity;
@@ -156,44 +164,25 @@ function optimizeWithDependencies(
     inventory[item] = inventoryInput[item] || 0;
   });
 
-  const inv = { ...inventory };
+  let inv = { ...inventory };
   const allProductionSteps: OptimizedStep[] = [];
   let totalProfit = 0;
   let totalTime = 0;
 
   const allItems = { ...typedMiningData.tambang, ...typedMiningData.perhiasan };
-  const readyItems: ReadyItem[] = [];
-  Object.entries(allItems).forEach(([name, data]) => {
-    const req = data.require || {};
-    if (Object.keys(req).length === 0 && inv[name] > 0 && data.price > 0) {
-      const value = data.price * inv[name];
-      readyItems.push({
-        name,
-        displayName: fmt(name),
-        quantity: inv[name],
-        value: value,
-        time: 0,
-        profitPerMinute: Infinity,
-        ready: true,
-      });
-      totalProfit += value;
-      inv[name] = 0;
-    }
-  });
 
   while (true) {
     let bestChain: {
       itemName: string;
       maxQty: number;
       chain: DependencyChain;
-      ppm: number;
+      totalProfit: number;
       finalProfit: number;
     } | null = null;
-    let bestPPM = 0;
+    let bestTotalProfit = 0;
 
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
-
       const maxQty = calculateMaxQuantity(itemName, typedMiningData, inv);
       if (maxQty <= 0) continue;
 
@@ -201,17 +190,17 @@ function optimizeWithDependencies(
 
       if (!canAffordChain(chain.rawMaterials, inv)) continue;
 
-      const ppm = chain.totalProfit / (chain.totalTime / 60);
+      const totalProfit = chain.totalProfit;
 
-      if (ppm > bestPPM) {
+      if (totalProfit > bestTotalProfit) {
         bestChain = {
           itemName,
           maxQty,
           chain,
-          ppm,
+          totalProfit,
           finalProfit: itemData.price * maxQty,
         };
-        bestPPM = ppm;
+        bestTotalProfit = totalProfit;
       }
     }
 
@@ -222,32 +211,34 @@ function optimizeWithDependencies(
     for (const [rawItem, qty] of Object.entries(chain.rawMaterials)) {
       inv[rawItem] = (inv[rawItem] || 0) - qty;
     }
-
     const stepsByItem: Record<
       string,
       {
         name: string;
-        quantity: number;
+        qty: number;
         time: number;
         profit: number;
         requirements: Array<{ item: string; quantity: number }>;
       }
     > = {};
-
     for (const step of chain.productionSteps) {
       inv[step.itemName] = (inv[step.itemName] || 0) + step.quantity;
+
+      for (const req of step.requirements) {
+        inv[req.item] = (inv[req.item] || 0) - req.quantity;
+      }
 
       if (!stepsByItem[step.itemName]) {
         stepsByItem[step.itemName] = {
           name: step.itemName,
-          quantity: 0,
+          qty: 0,
           time: 0,
           profit: 0,
           requirements: [],
         };
       }
 
-      stepsByItem[step.itemName].quantity += step.quantity;
+      stepsByItem[step.itemName].qty += step.quantity;
       stepsByItem[step.itemName].time += step.time;
       stepsByItem[step.itemName].profit += step.profit;
 
@@ -262,53 +253,78 @@ function optimizeWithDependencies(
         }
       }
     }
-    Object.values(stepsByItem).forEach((step) => {
-      const requirementStrings: RequirementInfo[] = step.requirements.map(
-        (req: { item: string; quantity: number }) => ({
-          item: req.item,
-          displayName: fmt(req.item),
-          quantity: req.quantity,
-        })
-      );
 
+    Object.values(stepsByItem).forEach((step) => {
       allProductionSteps.push({
         name: step.name,
         displayName: fmt(step.name),
-        quantity: step.quantity,
+        quantity: step.qty,
         value: step.profit,
         time: step.time,
-        timeFormatted: formatTime(step.time),
-        profitPerMinute: Math.round(step.profit / (step.time / 60)),
-        requirements: requirementStrings,
+        timeFormatted: time(step.time),
+        requirements: step.requirements.map((req) => ({
+          item: req.item,
+          displayName: fmt(req.item),
+          quantity: req.quantity,
+        })),
         ready: false,
       });
     });
-
     totalProfit += bestChain.finalProfit;
     totalTime += chain.totalTime;
   }
-  const remainingItems: RemainingMaterial[] = Object.entries(inv)
-    .filter(([, qty]) => qty > 0)
-    .sort(([, a], [, b]) => b - a)
-    .map(([itemName, qty]) => ({
-      name: itemName,
-      displayName: fmt(itemName),
-      quantity: qty,
-    }));
+
+  const productionSteps = allProductionSteps.map((step, index) => ({
+    ...step,
+    step: index + 1,
+  }));
+  const remainingRawMaterials: RemainingMaterial[] = [];
+  const sellableItems: SellableItem[] = [];
+  let totalSellValue = 0;
+
+  Object.entries(inv)
+    .filter(([name, qty]) => qty > 0)
+    .forEach(([name, qty]) => {
+      const itemData = allItems[name];
+      const price = itemData?.price || 0;
+
+      if (price > 0) {
+        const value = price * qty;
+        sellableItems.push({
+          name: fmt(name),
+          quantity: qty,
+          price: price,
+          value: value,
+        });
+        totalSellValue += value;
+      } else {
+        const hasRequirements =
+          itemData?.require && Object.keys(itemData.require).length > 0;
+        if (!hasRequirements) {
+          remainingRawMaterials.push({
+            name: name,
+            displayName: fmt(name),
+            quantity: qty,
+          });
+        }
+      }
+    });
+
+  sellableItems.sort((a, b) => b.value - a.value);
+  remainingRawMaterials.sort((a, b) => b.quantity - a.quantity);
 
   return {
     success: true,
     data: {
       summary: {
         totalProfit,
+        totalSellValue,
         totalTime,
-        totalTimeFormatted: formatTime(totalTime),
-        profitPerHour:
-          totalTime > 0 ? Math.round(totalProfit / (totalTime / 3600)) : 0,
+        totalTimeFormatted: time(totalTime),
       },
-      readyItems,
-      productionSteps: allProductionSteps,
-      remainingMaterials: remainingItems,
+      sellableItems,
+      productionSteps,
+      remainingMaterials: remainingRawMaterials,
     },
   };
 }

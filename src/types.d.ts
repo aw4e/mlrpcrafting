@@ -43,7 +43,6 @@ export interface OptimizedStep {
   value: number;
   time: number;
   timeFormatted: string;
-  profitPerMinute: number;
   requirements: RequirementInfo[];
   ready: boolean;
 }
@@ -58,6 +57,13 @@ export interface ReadyItem {
   ready: boolean;
 }
 
+export interface SellableItem {
+  name: string;
+  quantity: number;
+  price: number;
+  value: number;
+}
+
 export interface RemainingMaterial {
   name: string;
   displayName: string;
@@ -69,11 +75,11 @@ export interface OptimizationResult {
   data?: {
     summary: {
       totalProfit: number;
+      totalSellValue: number;
       totalTime: number;
       totalTimeFormatted: string;
-      profitPerHour: number;
     };
-    readyItems: ReadyItem[];
+    sellableItems: SellableItem[];
     productionSteps: OptimizedStep[];
     remainingMaterials: RemainingMaterial[];
   };
