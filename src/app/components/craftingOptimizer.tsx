@@ -651,6 +651,37 @@ export default function CraftingOptimizer() {
                                         )}
                                     </div>
                                   )}{" "}
+                                  {/* Cost and Profit Margin Info */}
+                                  {step.opportunityCost &&
+                                    step.opportunityCost > 0 && (
+                                      <div className="mb-3 p-2 sm:p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                          <div className="flex items-center space-x-2">
+                                            <span className="text-xs text-orange-400">
+                                              💰 Cost:
+                                            </span>
+                                            <span className="text-xs font-mono text-orange-300">
+                                              {formatCurrency(
+                                                step.opportunityCost
+                                              )}
+                                            </span>
+                                          </div>
+                                          {step.profitMargin &&
+                                            step.profitMargin > 0 && (
+                                              <div className="flex items-center space-x-2">
+                                                <span className="text-xs text-green-400">
+                                                  📈 Margin:
+                                                </span>
+                                                <span className="text-xs font-mono text-green-300">
+                                                  +
+                                                  {step.profitMargin.toFixed(1)}
+                                                  %
+                                                </span>
+                                              </div>
+                                            )}
+                                        </div>
+                                      </div>
+                                    )}
                                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                     <div className="flex items-center space-x-2 text-gray-400">
                                       <Clock className="h-3 w-3 sm:h-4 sm:w-4" />

@@ -45,6 +45,8 @@ export interface OptimizedStep {
   timeFormatted: string;
   requirements: RequirementInfo[];
   ready: boolean;
+  opportunityCost?: number;
+  profitMargin?: number;
 }
 
 export interface SellableItem {

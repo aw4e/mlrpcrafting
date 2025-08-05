@@ -274,8 +274,49 @@ function calculateMaxQuantity(
       }
     }
   }
-
   return maxQty === Infinity ? 0 : maxQty;
+}
+
+function calculateOpportunityCost(
+  itemName: string,
+  quantity: number,
+  allItems: Record<string, any>,
+  memo: Record<string, number> = {}
+): number {
+  const key = `${itemName}_${quantity}`;
+  if (memo[key] !== undefined) return memo[key];
+
+  const itemData = allItems[itemName];
+  if (!itemData) {
+    memo[key] = 0;
+    return 0;
+  }
+
+  const requirements = itemData.require || {};
+  let totalCost = 0;
+
+  if (Object.keys(requirements).length === 0) {
+    totalCost = 0;
+  } else {
+    for (const [reqItem, reqQty] of Object.entries(requirements)) {
+      const totalReqQty = (reqQty as number) * quantity;
+      const reqItemData = allItems[reqItem];
+
+      if (reqItemData && reqItemData.price > 0) {
+        totalCost += reqItemData.price * totalReqQty;
+      } else {
+        totalCost += calculateOpportunityCost(
+          reqItem,
+          totalReqQty,
+          allItems,
+          memo
+        );
+      }
+    }
+  }
+
+  memo[key] = totalCost;
+  return totalCost;
 }
 
 function optimizeWithDependencies(
@@ -292,16 +333,16 @@ function optimizeWithDependencies(
   let totalTime = 0;
 
   const allItems = { ...typedMiningData.tambang, ...typedMiningData.perhiasan };
-
   while (true) {
     let bestChain: {
       itemName: string;
       maxQty: number;
       chain: DependencyChain;
-      totalProfit: number;
+      profitMargin: number;
       finalProfit: number;
+      opportunityCost: number;
     } | null = null;
-    let bestTotalProfit = 0;
+    let bestProfitMargin = 0;
 
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
@@ -317,17 +358,29 @@ function optimizeWithDependencies(
 
       if (!canAffordChain(chain.rawMaterials, inv)) continue;
 
-      const chainTotalProfit = chain.totalProfit;
+      const opportunityCost = calculateOpportunityCost(
+        itemName,
+        maxQty,
+        allItems
+      );
+      const finalProfit = itemData.price * maxQty;
+      const netProfit = finalProfit - opportunityCost;
 
-      if (chainTotalProfit > bestTotalProfit) {
+      if (netProfit <= 0) continue;
+
+      const profitMargin =
+        opportunityCost > 0 ? netProfit / opportunityCost : 0.001;
+
+      if (profitMargin > bestProfitMargin) {
         bestChain = {
           itemName,
           maxQty,
           chain,
-          totalProfit: chainTotalProfit,
-          finalProfit: itemData.price * maxQty,
+          profitMargin,
+          finalProfit,
+          opportunityCost,
         };
-        bestTotalProfit = chainTotalProfit;
+        bestProfitMargin = profitMargin;
       }
     }
 
@@ -382,8 +435,18 @@ function optimizeWithDependencies(
         }
       }
     }
-
     Object.values(stepsByItem).forEach((step) => {
+      const stepOpportunityCost = calculateOpportunityCost(
+        step.name,
+        step.qty,
+        allItems
+      );
+
+      const stepProfitMargin =
+        stepOpportunityCost > 0
+          ? ((step.profit - stepOpportunityCost) / stepOpportunityCost) * 100
+          : 0;
+
       allProductionSteps.push({
         name: step.name,
         displayName: fmt(step.name),
@@ -397,9 +460,12 @@ function optimizeWithDependencies(
           quantity: req.quantity,
         })),
         ready: false,
+        opportunityCost:
+          stepOpportunityCost > 0 ? stepOpportunityCost : undefined,
+        profitMargin: stepOpportunityCost > 0 ? stepProfitMargin : undefined,
       });
     });
-    totalProfit += bestChain.finalProfit;
+    totalProfit += bestChain.finalProfit - bestChain.opportunityCost;
     totalTime += chain.totalTime;
   }
 
