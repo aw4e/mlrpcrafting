@@ -3,6 +3,7 @@ import miningData from "@/data/mining.json";
 import {
   ApiRequest,
   DependencyChain,
+  GameItem,
   Inventory,
   MiningData,
   OptimizationResult,
@@ -280,7 +281,7 @@ function calculateMaxQuantity(
 function calculateOpportunityCost(
   itemName: string,
   quantity: number,
-  allItems: Record<string, any>,
+  allItems: Record<string, GameItem>,
   memo: Record<string, number> = {}
 ): number {
   const key = `${itemName}_${quantity}`;
