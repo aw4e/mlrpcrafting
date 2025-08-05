@@ -242,6 +242,13 @@
         "emerald": 6
       },
       "price": 452
+    },
+    "sapphire_necklace_silver": {
+      "require": {
+        "silver_chain": 1,
+        "sapphire": 6
+      },
+      "price": 218
     }
   }
 }
