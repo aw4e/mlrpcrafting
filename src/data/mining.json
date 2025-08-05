@@ -208,6 +208,13 @@
       },
       "price": 0
     },
+    "diamond_necklace": {
+      "require": {
+        "gold_chain": 1,
+        "diamond": 6
+      },
+      "price": 312
+    },
     "ruby_necklace": {
       "require": {
         "gold_chain": 1,
