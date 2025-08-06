@@ -1,5 +1,6 @@
 import CraftingOptimizer from "@/app/components/craftingOptimizer";
 import BackgroundGrid from "@/app/components/backgroundGrid";
+import Navigation from "@/app/components/navigation";
 
 export default function Home() {
   return (
@@ -27,6 +28,9 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Navigation */}
+      <Navigation />
 
       {/* Main Content */}
       <main className="relative z-10 pb-16">

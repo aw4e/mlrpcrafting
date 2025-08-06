@@ -169,7 +169,6 @@ export default function CraftingOptimizer() {
     }
   };
   const handleInventoryChange = (item: string, value: string): void => {
-    // Remove any non-numeric characters except numbers
     const cleanValue = value.replace(/[^\d]/g, "");
     const numValue = parseInt(cleanValue) || 0;
     setInventory((prev) => ({
@@ -180,7 +179,7 @@ export default function CraftingOptimizer() {
 
   const formatDisplayValue = (value: number): string => {
     if (value === 0) return "";
-    return value.toLocaleString(); // This will format 1000 as "1,000"
+    return value.toLocaleString();
   };
 
   const formatCurrency = (amount: number): string => {
