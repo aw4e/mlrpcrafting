@@ -767,7 +767,7 @@ export default function CraftingOptimizer() {
                         </div>
                       </div>
                       <div className="p-4 sm:p-6">
-                        <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 overflow-y-auto custom-scrollbar">
+                        <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-72 overflow-y-auto custom-scrollbar">
                           {result.sellableItems.map((item, index) => (
                             <div
                               key={index}

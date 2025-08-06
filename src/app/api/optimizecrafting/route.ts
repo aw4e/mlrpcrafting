@@ -334,6 +334,7 @@ function optimizeWithDependencies(
   let totalTime = 0;
 
   const allItems = { ...typedMiningData.tambang, ...typedMiningData.perhiasan };
+
   while (true) {
     let bestChain: {
       itemName: string;
@@ -343,55 +344,70 @@ function optimizeWithDependencies(
       finalProfit: number;
       opportunityCost: number;
     } | null = null;
-    let bestProfitMargin = 0;
+    let bestProfitMargin = -1;
 
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
+
       const maxQty = calculateMaxQuantity(itemName, typedMiningData, inv);
       if (maxQty <= 0) continue;
 
-      const chain = calculateDependencyChainWithInventory(
-        itemName,
-        maxQty,
-        typedMiningData,
-        inv
-      );
-
-      if (!canAffordChain(chain.rawMaterials, inv)) continue;
-
-      const opportunityCost = calculateOpportunityCost(
-        itemName,
-        maxQty,
-        allItems
-      );
-      const finalProfit = itemData.price * maxQty;
-      const netProfit = finalProfit - opportunityCost;
-
-      if (netProfit <= 0) continue;
-
-      const profitMargin =
-        opportunityCost > 0 ? netProfit / opportunityCost : 0.001;
-
-      if (profitMargin > bestProfitMargin) {
-        bestChain = {
+      for (let qty = Math.min(maxQty, 50); qty >= 1; qty--) {
+        const chain = calculateDependencyChainWithInventory(
           itemName,
-          maxQty,
-          chain,
-          profitMargin,
-          finalProfit,
-          opportunityCost,
-        };
-        bestProfitMargin = profitMargin;
+          qty,
+          typedMiningData,
+          inv
+        );
+
+        if (!canAffordChain(chain.rawMaterials, inv)) continue;
+
+        const opportunityCost = calculateOpportunityCost(
+          itemName,
+          qty,
+          allItems
+        );
+        const finalProfit = itemData.price * qty;
+        const netProfit = finalProfit - opportunityCost;
+
+        const profitMargin =
+          opportunityCost > 0
+            ? netProfit / opportunityCost
+            : netProfit > 0
+              ? 1
+              : -1;
+
+        const score = profitMargin * 0.6 + (finalProfit / 1000) * 0.4;
+
+        if (
+          score > bestProfitMargin ||
+          (score === bestProfitMargin &&
+            finalProfit > (bestChain?.finalProfit || 0))
+        ) {
+          bestChain = {
+            itemName,
+            maxQty: qty,
+            chain,
+            profitMargin,
+            finalProfit,
+            opportunityCost,
+          };
+          bestProfitMargin = score;
+        }
       }
     }
 
-    if (!bestChain) break;
+    if (!bestChain) {
+      break;
+    }
 
     const { chain } = bestChain;
 
-    for (const [rawItem, qty] of Object.entries(chain.rawMaterials)) {
-      inv[rawItem] = (inv[rawItem] || 0) - qty;
-    }
+    const sortedSteps = [...chain.productionSteps].sort((a, b) => {
+      const aDepth = getItemDepth(a.itemName, allItems);
+      const bDepth = getItemDepth(b.itemName, allItems);
+      return aDepth - bDepth;
+    });
 
     const stepsByItem: Record<
       string,
@@ -404,12 +420,28 @@ function optimizeWithDependencies(
       }
     > = {};
 
-    for (const step of chain.productionSteps) {
-      inv[step.itemName] = (inv[step.itemName] || 0) + step.quantity;
+    for (const step of sortedSteps) {
+      let canProcess = true;
+      for (const req of step.requirements) {
+        if ((inv[req.item] || 0) < req.quantity) {
+          canProcess = false;
+          break;
+        }
+      }
+
+      if (!canProcess) {
+        continue;
+      }
 
       for (const req of step.requirements) {
         inv[req.item] = (inv[req.item] || 0) - req.quantity;
+        if (inv[req.item] < 0) {
+          console.warn(`Negative inventory for ${req.item}: ${inv[req.item]}`);
+          inv[req.item] = 0;
+        }
       }
+
+      inv[step.itemName] = (inv[step.itemName] || 0) + step.quantity;
 
       if (!stepsByItem[step.itemName]) {
         stepsByItem[step.itemName] = {
@@ -436,6 +468,7 @@ function optimizeWithDependencies(
         }
       }
     }
+
     Object.values(stepsByItem).forEach((step) => {
       const stepOpportunityCost = calculateOpportunityCost(
         step.name,
@@ -448,32 +481,77 @@ function optimizeWithDependencies(
           ? ((step.profit - stepOpportunityCost) / stepOpportunityCost) * 100
           : 0;
 
-      allProductionSteps.push({
-        name: step.name,
-        displayName: fmt(step.name),
-        quantity: step.qty,
-        value: step.profit,
-        time: step.time,
-        timeFormatted: time(step.time),
-        requirements: step.requirements.map((req) => ({
-          item: req.item,
-          displayName: fmt(req.item),
-          quantity: req.quantity,
-        })),
-        ready: false,
-        opportunityCost:
-          stepOpportunityCost > 0 ? stepOpportunityCost : undefined,
-        profitMargin: stepOpportunityCost > 0 ? stepProfitMargin : undefined,
-      });
+      const existingStepIndex = allProductionSteps.findIndex(
+        (existingStep) => existingStep.name === step.name
+      );
+
+      if (existingStepIndex >= 0) {
+        const existingStep = allProductionSteps[existingStepIndex];
+        existingStep.quantity += step.qty;
+        existingStep.value += step.profit;
+        existingStep.time += step.time;
+        existingStep.timeFormatted = time(existingStep.time);
+
+        for (const req of step.requirements) {
+          const existingReq = existingStep.requirements.find(
+            (r) => r.item === req.item
+          );
+          if (existingReq) {
+            existingReq.quantity += req.quantity;
+          } else {
+            existingStep.requirements.push({
+              item: req.item,
+              displayName: fmt(req.item),
+              quantity: req.quantity,
+            });
+          }
+        }
+      } else {
+        allProductionSteps.push({
+          name: step.name,
+          displayName: fmt(step.name),
+          quantity: step.qty,
+          value: step.profit,
+          time: step.time,
+          timeFormatted: time(step.time),
+          requirements: step.requirements.map((req) => ({
+            item: req.item,
+            displayName: fmt(req.item),
+            quantity: req.quantity,
+          })),
+          ready: false,
+          opportunityCost:
+            stepOpportunityCost > 0 ? stepOpportunityCost : undefined,
+          profitMargin: stepOpportunityCost > 0 ? stepProfitMargin : undefined,
+        });
+      }
     });
+
     totalProfit += bestChain.finalProfit - bestChain.opportunityCost;
     totalTime += chain.totalTime;
+
+    const nonZeroItems = Object.entries(inv).filter(([, qty]) => qty > 0);
+
+    const hasValuableMaterials = nonZeroItems.some(([item, qty]) => {
+      const itemData = allItems[item];
+      return (
+        itemData &&
+        (itemData.price > 10 ||
+          Object.keys(itemData.require || {}).length === 0) &&
+        qty > 0
+      );
+    });
+
+    if (!hasValuableMaterials && bestProfitMargin < 0.01) {
+      break;
+    }
   }
 
   const productionSteps = allProductionSteps.map((step, index) => ({
     ...step,
     step: index + 1,
   }));
+
   const sellableItems: SellableItem[] = [];
   let totalSellValue = 0;
 
@@ -510,6 +588,27 @@ function optimizeWithDependencies(
       productionSteps,
     },
   };
+}
+
+function getItemDepth(
+  itemName: string,
+  allItems: Record<string, GameItem>
+): number {
+  const itemData = allItems[itemName];
+  if (
+    !itemData ||
+    !itemData.require ||
+    Object.keys(itemData.require).length === 0
+  ) {
+    return 0;
+  }
+
+  let maxDepth = 0;
+  for (const reqItem of Object.keys(itemData.require)) {
+    const reqDepth = getItemDepth(reqItem, allItems);
+    maxDepth = Math.max(maxDepth, reqDepth + 1);
+  }
+  return maxDepth;
 }
 
 export async function POST(request: NextRequest) {
