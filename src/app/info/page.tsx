@@ -52,6 +52,18 @@ export default function InfoPage() {
     ];
     return baseComponents.includes(itemName);
   };
+  const isGrayItem = (itemName: string) => {
+    const grayItems = [
+      "diamond",
+      "ruby",
+      "sapphire",
+      "emerald",
+      "ingot",
+      "coal",
+    ];
+    return grayItems.includes(itemName.toLowerCase());
+  };
+
   const calculateRequirementsCost = (
     requirements: Record<string, number> | undefined
   ): number => {
@@ -163,6 +175,7 @@ export default function InfoPage() {
     profitMargin: number,
     itemName: string
   ) => {
+    if (isGrayItem(itemName)) return "text-gray-400";
     if (isBaseComponent(itemName)) return "text-blue-400";
     if (profit <= 0) return "text-red-400";
     if (profitMargin >= 50) return "text-green-400";
@@ -176,10 +189,12 @@ export default function InfoPage() {
     itemName: string
   ) => {
     if (isBaseComponent(itemName)) return "bg-blue-900/20 border-blue-700/50";
+    if (isGrayItem(itemName)) return "bg-gray-900/20 border-gray-700/50";
     if (profit <= 0) return "bg-red-900/20 border-red-700/50";
     if (profitMargin >= 50) return "bg-green-900/20 border-green-700/50";
-    if (profitMargin >= 25) return "bg-blue-900/20 border-blue-700/50";
-    return "bg-orange-900/20 border-orange-700/50";
+    if (profitMargin > 0 && profitMargin < 25)
+      return "bg-orange-400/10 border-orange-700/50";
+    return "bg-gray-900/20 border-gray-700/50";
   };
 
   return (
