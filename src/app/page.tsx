@@ -1,37 +1,76 @@
 import CraftingOptimizer from "@/app/components/craftingOptimizer";
+import BackgroundGrid from "@/app/components/backgroundGrid";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950">
-      <div className="flex-1">
-        <CraftingOptimizer />
-      </div>
+    <div className="min-h-screen bg-slate-950 relative">
+      <BackgroundGrid />
+
+      {/* Header Section */}
+      <header className="relative z-10 pt-8 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+              <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                MLRP
+              </span>
+              <span className="text-white">Crafting</span>
+            </h1>
+            <p className="text-xl text-gray-300 mb-2">
+              MotionLife RP Crafting Calculator
+            </p>
+            <p className="text-sm text-gray-400 max-w-2xl mx-auto">
+              Optimasi crafting untuk server MotionLife RP dengan calculator
+              yang mudah digunakan dan efisien untuk semua kebutuhan crafting
+              Anda.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="relative z-10 pb-16">
+        <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8">
+          <CraftingOptimizer />
+        </div>
+      </main>
+
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 mt-6">
-        <div className="max-w-full mx-auto px-3 sm:px-6 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-center sm:text-left">
-              <p className="text-gray-400 text-sm">
+      <footer className="relative z-10 bg-slate-900/50 backdrop-blur-sm border-t border-slate-800">
+        {" "}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* About Section */}
+            <div className="text-center md:text-left">
+              <h3 className="text-lg font-semibold text-white mb-3">
+                MLRPCrafting
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Calculator crafting terbaik untuk MotionLife RP. Optimalkan
+                hasil crafting Anda dengan perhitungan yang akurat dan strategi
+                terbaik.
+              </p>
+            </div>
+
+            {/* Contact & Credits */}
+            <div className="text-center md:text-right">
+              <h3 className="text-lg font-semibold text-white mb-3">Credits</h3>
+              <p className="text-gray-400 text-sm mb-2">
                 Created by{" "}
                 <a
                   href="https://github.com/aw4e"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 transition-colors font-semibold"
+                  className="text-green-400 hover:text-green-300 transition-colors font-semibold"
                 >
                   aw4e
                 </a>
               </p>
-              <p className="text-gray-500 text-xs mt-1">
-                MotionLife RP Crafting Calculator
-              </p>
-            </div>
-            <div className="text-center sm:text-right">
               <a
                 href="https://github.com/aw4e/mlrpcrafting"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors text-sm"
+                className="inline-flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors text-sm"
               >
                 <svg
                   className="w-4 h-4"
@@ -45,9 +84,17 @@ export default function Home() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Contribute on GitHub</span>
+                <span>GitHub</span>
               </a>
             </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-slate-800 mt-8 pt-6 text-center">
+            <p className="text-gray-500 text-sm">
+              © 2025 MLRPCrafting. All rights reserved. | Made for MotionLife
+              RP Community
+            </p>
           </div>
         </div>
       </footer>

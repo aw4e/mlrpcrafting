@@ -74,3 +74,14 @@ export interface OptimizationResult {
 export interface ApiRequest {
   inventory: Inventory;
 }
+
+export interface FloatingIcon {
+  id: number;
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  animationDelay: number;
+  animationDuration: number;
+  iconType: number;
+}
