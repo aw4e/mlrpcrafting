@@ -140,14 +140,17 @@ export default function InfoPage() {
       filtered = filtered.filter((item) => item.category === selectedCategory);
     }
 
-    filtered.sort((a, b) => b.profit - a.profit);
+    filtered.sort((a, b) => {
+      if (a.profit > 0 && b.profit <= 0) return -1;
+      if (a.profit <= 0 && b.profit > 0) return 1;
+      return b.profit - a.profit;
+    });
 
     return filtered;
   }, [allItemsData, searchTerm, selectedCategory]);
   const categories = [
     { key: "all", label: "Semua", icon: Package },
-    { key: "raw", label: "Raw Materials", icon: Package },
-    { key: "ingots", label: "Ingots", icon: DollarSign },
+    { key: "ingots", label: "Ingots & Raw Materials", icon: DollarSign },
     { key: "gems", label: "Gems", icon: Gem },
     { key: "base", label: "Base Components", icon: Target },
     { key: "rings", label: "Rings", icon: TrendingUp },
