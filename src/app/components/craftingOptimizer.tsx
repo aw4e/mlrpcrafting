@@ -34,7 +34,7 @@ const materialCategories = {
     "iron_ore",
     "gold_ore",
     "silver_ore",
-    "aluminium_ore",
+    "alluminium_ore",
     "coal",
     "uncut_sapphire",
     "uncut_diamond",

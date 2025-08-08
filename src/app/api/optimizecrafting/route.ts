@@ -5,21 +5,23 @@ import {
   DependencyChain,
   GameItem,
   Inventory,
-  MiningData,
   OptimizationResult,
   OptimizedStep,
   ProductionStep,
   SellableItem,
 } from "@/types";
 
-const typedMiningData = miningData as MiningData;
+const typedMiningData = miningData as {
+  tambang: Record<string, GameItem>;
+  perhiasan: Record<string, GameItem>;
+};
 
 const allMaterials: string[] = [
   "copper_ore",
   "iron_ore",
   "gold_ore",
   "silver_ore",
-  "aluminium_ore",
+  "alluminium_ore",
   "uncut_sapphire",
   "uncut_diamond",
   "uncut_ruby",
@@ -47,10 +49,27 @@ const time = (s: number): string => {
   return result.trim();
 };
 
+const isIngot = (itemName: string): boolean => {
+  return itemName.endsWith("_ingot");
+};
+
+const isUncut = (itemName: string): boolean => {
+  return itemName.startsWith("uncut_");
+};
+
+const getCutVersion = (uncutItem: string): string => {
+  return uncutItem.replace("uncut_", "");
+};
+
+const isCutGem = (itemName: string): boolean => {
+  const cutVersion = getCutVersion(itemName);
+  return Object.keys(typedMiningData.perhiasan).includes(cutVersion);
+};
+
 function calculateDependencyChain(
   itemName: string,
   quantity: number,
-  miningData: MiningData,
+  miningData: typeof typedMiningData,
   memo: Record<string, DependencyChain> = {}
 ): DependencyChain {
   const key = `${itemName}_${quantity}`;
@@ -103,7 +122,12 @@ function calculateDependencyChain(
     allProductionSteps.push(...depChain.productionSteps);
   }
 
-  if (Object.keys(requirements).length > 0) {
+  const shouldSkipStep =
+    (isIngot(itemName) && allMaterials.includes(itemName)) ||
+    (isUncut(itemName) && allMaterials.includes(itemName)) ||
+    (isCutGem(itemName) && allMaterials.includes(`uncut_${itemName}`));
+
+  if (!shouldSkipStep) {
     allProductionSteps.push({
       itemName,
       quantity,
@@ -130,7 +154,7 @@ function calculateDependencyChain(
 function calculateDependencyChainWithInventory(
   itemName: string,
   quantity: number,
-  miningData: MiningData,
+  miningData: typeof typedMiningData,
   currentInventory: Inventory,
   memo: Record<string, DependencyChain> = {}
 ): DependencyChain {
@@ -166,19 +190,23 @@ function calculateDependencyChainWithInventory(
     return memo[key];
   }
 
+  const workingInventory = { ...currentInventory };
+
   for (const [reqItem, reqQty] of Object.entries(requirements)) {
     const totalReqQty = (reqQty as number) * quantity;
-    const availableInInventory = currentInventory[reqItem] || 0;
+    const availableInInventory = workingInventory[reqItem] || 0;
 
     if (availableInInventory >= totalReqQty) {
       totalRawMaterials[reqItem] =
         (totalRawMaterials[reqItem] || 0) + totalReqQty;
+      workingInventory[reqItem] -= totalReqQty;
     } else {
       const needToCraft = totalReqQty - availableInInventory;
 
       if (availableInInventory > 0) {
         totalRawMaterials[reqItem] =
           (totalRawMaterials[reqItem] || 0) + availableInInventory;
+        workingInventory[reqItem] = 0;
       }
 
       const depChain = calculateDependencyChain(
@@ -198,7 +226,11 @@ function calculateDependencyChainWithInventory(
     }
   }
 
-  if (Object.keys(requirements).length > 0) {
+  const shouldSkipStep =
+    (isIngot(itemName) && allMaterials.includes(itemName)) ||
+    (isCutGem(itemName) && allMaterials.includes(`uncut_${itemName}`));
+
+  if (!shouldSkipStep) {
     allProductionSteps.push({
       itemName,
       quantity,
@@ -222,60 +254,86 @@ function calculateDependencyChainWithInventory(
   return result;
 }
 
-function canAffordChain(
-  rawMaterialsNeeded: Record<string, number>,
-  currentInventory: Inventory
+function canActuallyCraftQuantity(
+  itemName: string,
+  quantity: number,
+  miningData: typeof typedMiningData,
+  inventory: Inventory
 ): boolean {
-  for (const [item, needed] of Object.entries(rawMaterialsNeeded)) {
-    if ((currentInventory[item] || 0) < needed) {
+  if (quantity <= 0) return true;
+
+  const allItems = { ...miningData.tambang, ...miningData.perhiasan };
+  const itemData = allItems[itemName];
+
+  if (
+    !itemData ||
+    !itemData.require ||
+    Object.keys(itemData.require).length === 0
+  ) {
+    return (inventory[itemName] || 0) >= quantity;
+  }
+
+  const requirements = itemData.require;
+
+  for (const [reqItem, reqQty] of Object.entries(requirements)) {
+    const totalNeeded = (reqQty as number) * quantity;
+    const available = inventory[reqItem] || 0;
+
+    if (available >= totalNeeded) {
+      inventory[reqItem] -= totalNeeded;
+      continue;
+    }
+
+    const stillNeeded = totalNeeded - available;
+    inventory[reqItem] = 0;
+
+    if (
+      !canActuallyCraftQuantity(reqItem, stillNeeded, miningData, {
+        ...inventory,
+      })
+    ) {
       return false;
     }
   }
+
   return true;
 }
 
-function calculateMaxQuantity(
+function calculateActualMaxQuantity(
   itemName: string,
-  miningData: MiningData,
+  miningData: typeof typedMiningData,
   currentInventory: Inventory
 ): number {
   const allItems = { ...miningData.tambang, ...miningData.perhiasan };
   const itemData = allItems[itemName];
 
-  if (!itemData || !itemData.require) {
-    return currentInventory[itemName] || 0;
-  }
+  let low = 0;
+  let high = 1000;
 
-  const requirements = itemData.require;
-  let maxQty = Infinity;
-
-  for (const [reqItem, reqQty] of Object.entries(requirements)) {
-    const neededPerUnit = reqQty as number;
-    const availableInInventory = currentInventory[reqItem] || 0;
-
-    if (neededPerUnit > 0) {
-      const reqItemData = allItems[reqItem];
-      if (
-        reqItemData &&
-        reqItemData.require &&
-        Object.keys(reqItemData.require).length > 0
-      ) {
-        const maxCraftable = calculateMaxQuantity(
-          reqItem,
-          miningData,
-          currentInventory
-        );
-        const totalAvailable = availableInInventory + maxCraftable;
-        maxQty = Math.min(maxQty, Math.floor(totalAvailable / neededPerUnit));
-      } else {
-        maxQty = Math.min(
-          maxQty,
-          Math.floor(availableInInventory / neededPerUnit)
-        );
+  if (itemData && itemData.require) {
+    for (const [reqItem, reqQty] of Object.entries(itemData.require)) {
+      const neededPerUnit = reqQty as number;
+      if (neededPerUnit > 0) {
+        const maxInventory = Math.max(...Object.values(currentInventory), 0);
+        high = Math.min(high, Math.floor(maxInventory / neededPerUnit) + 1);
       }
     }
   }
-  return maxQty === Infinity ? 0 : maxQty;
+
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (
+      canActuallyCraftQuantity(itemName, mid, miningData, {
+        ...currentInventory,
+      })
+    ) {
+      low = mid;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return low;
 }
 
 function calculateOpportunityCost(
@@ -296,23 +354,19 @@ function calculateOpportunityCost(
   const requirements = itemData.require || {};
   let totalCost = 0;
 
-  if (Object.keys(requirements).length === 0) {
-    totalCost = 0;
-  } else {
-    for (const [reqItem, reqQty] of Object.entries(requirements)) {
-      const totalReqQty = (reqQty as number) * quantity;
-      const reqItemData = allItems[reqItem];
+  for (const [reqItem, reqQty] of Object.entries(requirements)) {
+    const totalReqQty = (reqQty as number) * quantity;
+    const reqItemData = allItems[reqItem];
 
-      if (reqItemData && reqItemData.price > 0) {
-        totalCost += reqItemData.price * totalReqQty;
-      } else {
-        totalCost += calculateOpportunityCost(
-          reqItem,
-          totalReqQty,
-          allItems,
-          memo
-        );
-      }
+    if (reqItemData && reqItemData.price > 0) {
+      totalCost += reqItemData.price * totalReqQty;
+    } else {
+      totalCost += calculateOpportunityCost(
+        reqItem,
+        totalReqQty,
+        allItems,
+        memo
+      );
     }
   }
 
@@ -340,28 +394,30 @@ function optimizeWithDependencies(
       itemName: string;
       maxQty: number;
       chain: DependencyChain;
-      profitMargin: number;
       finalProfit: number;
       opportunityCost: number;
     } | null = null;
-    let bestProfitMargin = -1;
+    let bestScore = -Infinity;
 
     for (const [itemName, itemData] of Object.entries(allItems)) {
       if (itemData.price <= 0) continue;
 
-      const maxQty = calculateMaxQuantity(itemName, typedMiningData, inv);
+      const maxQty = calculateActualMaxQuantity(itemName, typedMiningData, inv);
       if (maxQty <= 0) continue;
 
       for (let qty = Math.min(maxQty, 50); qty >= 1; qty--) {
+        if (
+          !canActuallyCraftQuantity(itemName, qty, typedMiningData, { ...inv })
+        ) {
+          continue;
+        }
+
         const chain = calculateDependencyChainWithInventory(
           itemName,
           qty,
           typedMiningData,
           inv
         );
-
-        if (!canAffordChain(chain.rawMaterials, inv)) continue;
-
         const opportunityCost = calculateOpportunityCost(
           itemName,
           qty,
@@ -369,211 +425,184 @@ function optimizeWithDependencies(
         );
         const finalProfit = itemData.price * qty;
         const netProfit = finalProfit - opportunityCost;
-
         const profitMargin =
           opportunityCost > 0
             ? netProfit / opportunityCost
-            : netProfit > 0
+            : finalProfit > 0
               ? 1
               : -1;
-
         const score = profitMargin * 0.6 + (finalProfit / 1000) * 0.4;
 
         if (
-          score > bestProfitMargin ||
-          (score === bestProfitMargin &&
-            finalProfit > (bestChain?.finalProfit || 0))
+          score > bestScore ||
+          (score === bestScore && finalProfit > (bestChain?.finalProfit || 0))
         ) {
           bestChain = {
             itemName,
             maxQty: qty,
             chain,
-            profitMargin,
             finalProfit,
             opportunityCost,
           };
-          bestProfitMargin = score;
+          bestScore = score;
         }
       }
     }
 
-    if (!bestChain) {
+    if (!bestChain) break;
+
+    const craftingInventory = { ...inv };
+    if (
+      !canActuallyCraftQuantity(
+        bestChain.itemName,
+        bestChain.maxQty,
+        typedMiningData,
+        craftingInventory
+      )
+    ) {
       break;
     }
 
-    const { chain } = bestChain;
+    Object.assign(inv, craftingInventory);
+    inv[bestChain.itemName] = (inv[bestChain.itemName] || 0) + bestChain.maxQty;
 
-    const sortedSteps = [...chain.productionSteps].sort((a, b) => {
-      const aDepth = getItemDepth(a.itemName, allItems);
-      const bDepth = getItemDepth(b.itemName, allItems);
-      return aDepth - bDepth;
-    });
+    const stepOpportunityCost = calculateOpportunityCost(
+      bestChain.itemName,
+      bestChain.maxQty,
+      allItems
+    );
+    const stepProfitMargin =
+      stepOpportunityCost > 0
+        ? ((bestChain.finalProfit - stepOpportunityCost) /
+            stepOpportunityCost) *
+          100
+        : 0;
 
-    const stepsByItem: Record<
-      string,
-      {
-        name: string;
-        qty: number;
-        time: number;
-        profit: number;
-        requirements: Array<{ item: string; quantity: number }>;
-      }
-    > = {};
-
-    for (const step of sortedSteps) {
-      let canProcess = true;
-      for (const req of step.requirements) {
-        if ((inv[req.item] || 0) < req.quantity) {
-          canProcess = false;
-          break;
+    const existingStepIndex = allProductionSteps.findIndex(
+      (step) => step.name === bestChain.itemName
+    );
+    if (existingStepIndex >= 0) {
+      const existingStep = allProductionSteps[existingStepIndex];
+      existingStep.quantity += bestChain.maxQty;
+      existingStep.value += bestChain.finalProfit;
+      existingStep.time += bestChain.maxQty * 15;
+      existingStep.timeFormatted = time(existingStep.time);
+    } else {
+      const requirements: Array<{
+        item: string;
+        displayName: string;
+        quantity: number;
+      }> = [];
+      const itemData = allItems[bestChain.itemName];
+      if (itemData?.require) {
+        for (const [reqItem, reqQty] of Object.entries(itemData.require)) {
+          requirements.push({
+            item: reqItem,
+            displayName: fmt(reqItem),
+            quantity: (reqQty as number) * bestChain.maxQty,
+          });
         }
       }
 
-      if (!canProcess) {
-        continue;
-      }
-
-      for (const req of step.requirements) {
-        inv[req.item] = (inv[req.item] || 0) - req.quantity;
-        if (inv[req.item] < 0) {
-          console.warn(`Negative inventory for ${req.item}: ${inv[req.item]}`);
-          inv[req.item] = 0;
-        }
-      }
-
-      inv[step.itemName] = (inv[step.itemName] || 0) + step.quantity;
-
-      if (!stepsByItem[step.itemName]) {
-        stepsByItem[step.itemName] = {
-          name: step.itemName,
-          qty: 0,
-          time: 0,
-          profit: 0,
-          requirements: [],
-        };
-      }
-
-      stepsByItem[step.itemName].qty += step.quantity;
-      stepsByItem[step.itemName].time += step.time;
-      stepsByItem[step.itemName].profit += step.profit;
-
-      for (const req of step.requirements) {
-        const existingReq = stepsByItem[step.itemName].requirements.find(
-          (r) => r.item === req.item
-        );
-        if (existingReq) {
-          existingReq.quantity += req.quantity;
-        } else {
-          stepsByItem[step.itemName].requirements.push({ ...req });
-        }
-      }
+      allProductionSteps.push({
+        name: bestChain.itemName,
+        displayName: fmt(bestChain.itemName),
+        quantity: bestChain.maxQty,
+        value: bestChain.finalProfit,
+        time: bestChain.maxQty * 15,
+        timeFormatted: time(bestChain.maxQty * 15),
+        requirements,
+        ready: false,
+        opportunityCost:
+          stepOpportunityCost > 0 ? stepOpportunityCost : undefined,
+        profitMargin: stepOpportunityCost > 0 ? stepProfitMargin : undefined,
+      });
     }
 
-    Object.values(stepsByItem).forEach((step) => {
-      const stepOpportunityCost = calculateOpportunityCost(
-        step.name,
-        step.qty,
-        allItems
-      );
-
-      const stepProfitMargin =
-        stepOpportunityCost > 0
-          ? ((step.profit - stepOpportunityCost) / stepOpportunityCost) * 100
-          : 0;
-
-      const existingStepIndex = allProductionSteps.findIndex(
-        (existingStep) => existingStep.name === step.name
-      );
-
-      if (existingStepIndex >= 0) {
-        const existingStep = allProductionSteps[existingStepIndex];
-        existingStep.quantity += step.qty;
-        existingStep.value += step.profit;
-        existingStep.time += step.time;
-        existingStep.timeFormatted = time(existingStep.time);
-
-        for (const req of step.requirements) {
-          const existingReq = existingStep.requirements.find(
-            (r) => r.item === req.item
-          );
-          if (existingReq) {
-            existingReq.quantity += req.quantity;
-          } else {
-            existingStep.requirements.push({
-              item: req.item,
-              displayName: fmt(req.item),
-              quantity: req.quantity,
-            });
-          }
-        }
-      } else {
-        allProductionSteps.push({
-          name: step.name,
-          displayName: fmt(step.name),
-          quantity: step.qty,
-          value: step.profit,
-          time: step.time,
-          timeFormatted: time(step.time),
-          requirements: step.requirements.map((req) => ({
-            item: req.item,
-            displayName: fmt(req.item),
-            quantity: req.quantity,
-          })),
-          ready: false,
-          opportunityCost:
-            stepOpportunityCost > 0 ? stepOpportunityCost : undefined,
-          profitMargin: stepOpportunityCost > 0 ? stepProfitMargin : undefined,
-        });
-      }
-    });
-
     totalProfit += bestChain.finalProfit - bestChain.opportunityCost;
-    totalTime += chain.totalTime;
+    totalTime += bestChain.maxQty * 15;
 
-    const nonZeroItems = Object.entries(inv).filter(([, qty]) => qty > 0);
-
-    const hasValuableMaterials = nonZeroItems.some(([item, qty]) => {
+    const hasValuableMaterials = Object.entries(inv).some(([item, qty]) => {
       const itemData = allItems[item];
       return (
         itemData &&
         (itemData.price > 10 ||
-          Object.keys(itemData.require || {}).length === 0) &&
+          !itemData.require ||
+          Object.keys(itemData.require).length === 0) &&
         qty > 0
       );
     });
 
-    if (!hasValuableMaterials && bestProfitMargin < 0.01) {
-      break;
+    if (!hasValuableMaterials && bestScore < 0.01) break;
+  }
+
+  for (const step of allProductionSteps) {
+    const chain = calculateDependencyChain(
+      step.name,
+      step.quantity,
+      typedMiningData
+    );
+    for (const subStep of chain.productionSteps) {
+      const existingIndex = allProductionSteps.findIndex(
+        (s) => s.name === subStep.itemName
+      );
+      if (existingIndex < 0) {
+        const subItemData = allItems[subStep.itemName];
+        const profit = subItemData?.price
+          ? subItemData.price * subStep.quantity
+          : 0;
+        const oppCost = calculateOpportunityCost(
+          subStep.itemName,
+          subStep.quantity,
+          allItems
+        );
+        const margin = oppCost > 0 ? ((profit - oppCost) / oppCost) * 100 : 0;
+
+        const requirements = subStep.requirements.map((req) => ({
+          item: req.item,
+          displayName: fmt(req.item),
+          quantity: req.quantity,
+        }));
+
+        allProductionSteps.push({
+          name: subStep.itemName,
+          displayName: fmt(subStep.itemName),
+          quantity: subStep.quantity,
+          value: profit,
+          time: subStep.time,
+          timeFormatted: time(subStep.time),
+          requirements,
+          ready: false,
+          opportunityCost: oppCost > 0 ? oppCost : undefined,
+          profitMargin: margin > 0 ? margin : undefined,
+        });
+      }
     }
   }
 
-  const productionSteps = allProductionSteps.map((step, index) => ({
-    ...step,
-    step: index + 1,
-  }));
+  const productionSteps = allProductionSteps
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((step, index) => ({ ...step, step: index + 1 }));
 
-  const sellableItems: SellableItem[] = [];
-  let totalSellValue = 0;
-
-  Object.entries(inv)
+  const sellableItems: SellableItem[] = Object.entries(inv)
     .filter(([, qty]) => qty > 0)
-    .forEach(([itemName, qty]) => {
+    .map(([itemName, qty]) => {
       const itemData = allItems[itemName];
       const price = itemData?.price || 0;
+      return {
+        name: fmt(itemName),
+        quantity: qty,
+        price,
+        value: price * qty,
+      };
+    })
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
 
-      if (price > 0) {
-        const value = price * qty;
-        sellableItems.push({
-          name: fmt(itemName),
-          quantity: qty,
-          price: price,
-          value: value,
-        });
-        totalSellValue += value;
-      }
-    });
-
-  sellableItems.sort((a, b) => b.value - a.value);
+  const totalSellValue = sellableItems.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
 
   return {
     success: true,
@@ -588,27 +617,6 @@ function optimizeWithDependencies(
       productionSteps,
     },
   };
-}
-
-function getItemDepth(
-  itemName: string,
-  allItems: Record<string, GameItem>
-): number {
-  const itemData = allItems[itemName];
-  if (
-    !itemData ||
-    !itemData.require ||
-    Object.keys(itemData.require).length === 0
-  ) {
-    return 0;
-  }
-
-  let maxDepth = 0;
-  for (const reqItem of Object.keys(itemData.require)) {
-    const reqDepth = getItemDepth(reqItem, allItems);
-    maxDepth = Math.max(maxDepth, reqDepth + 1);
-  }
-  return maxDepth;
 }
 
 export async function POST(request: NextRequest) {
@@ -629,7 +637,6 @@ export async function POST(request: NextRequest) {
     const result = optimizeWithDependencies(body.inventory);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Optimization error:", error);
     return NextResponse.json(
       {
         success: false,

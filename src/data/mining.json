@@ -30,7 +30,7 @@
     },
     "alluminium_ingot": {
       "require": {
-        "aluminium_ore": 2
+        "alluminium_ore": 2
       },
       "price": 18
     },
