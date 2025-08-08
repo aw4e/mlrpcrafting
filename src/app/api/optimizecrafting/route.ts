@@ -181,10 +181,11 @@ function calculateDependencyChainWithInventory(
           (totalRawMaterials[reqItem] || 0) + availableInInventory;
       }
 
-      const depChain = calculateDependencyChain(
+      const depChain = calculateDependencyChainWithInventory(
         reqItem,
         needToCraft,
         miningData,
+        currentInventory,
         memo
       );
       totalTime += depChain.totalTime;
