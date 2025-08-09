@@ -545,7 +545,7 @@ export default function CraftingOptimizer() {
                         <div className="ml-3 sm:ml-4">
                           {" "}
                           <p className="text-xs sm:text-sm font-medium text-blue-300">
-                            Total Waktu
+                            Total Waktu (Smelting)
                           </p>
                           <p className="text-lg sm:text-2xl font-bold text-blue-100">
                             {result.summary.totalTimeFormatted}
@@ -561,7 +561,7 @@ export default function CraftingOptimizer() {
                         <div className="ml-3 sm:ml-4">
                           {" "}
                           <p className="text-xs sm:text-sm font-medium text-purple-300">
-                            Total Jualan
+                            Total Jual Semua Item
                           </p>
                           <p className="text-lg sm:text-2xl font-bold text-purple-100">
                             {formatCurrency(result.summary.totalSellValue)}
