@@ -22,13 +22,14 @@ import {
   Gem,
 } from "lucide-react";
 
+type RecommendationLevel = "topPriority" | "recommended" | "lowProfit";
+type RecommendationFilter = "all" | RecommendationLevel;
+
 export default function InfoPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
-  const [selectedRecommendation, setSelectedRecommendation] = useState<
-    "all" | "sangat" | "direkomendasikan" | "rendah"
-  >("all");
+  const [selectedRecommendation, setSelectedRecommendation] = useState<RecommendationFilter>("all");
 
   const typedMiningData = miningData as MiningData;
 
@@ -130,13 +131,12 @@ export default function InfoPage() {
         else category = "jewelry";
       }
 
-      let recommendation: "sangat" | "direkomendasikan" | "rendah" | "none" =
-        "none";
+      let recommendation: RecommendationLevel | "none" = "none";
       const hasRequirements = Object.keys(data.require || {}).length > 0;
       if (!isBaseComponent(name) && hasRequirements) {
-        if (profitMargin >= 50) recommendation = "sangat";
-        else if (profitMargin >= 25) recommendation = "direkomendasikan";
-        else if (profitMargin > 0) recommendation = "rendah";
+        if (profitMargin >= 50) recommendation = "topPriority";
+        else if (profitMargin >= 25) recommendation = "recommended";
+        else if (profitMargin > 0) recommendation = "lowProfit";
       }
 
       return {
@@ -290,16 +290,12 @@ export default function InfoPage() {
                 <select
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
                   value={selectedRecommendation}
-                  onChange={(e) =>
-                    setSelectedRecommendation(
-                      e.target.value as "all" | "sangat" | "direkomendasikan" | "rendah"
-                    )
-                  }
+                  onChange={(e) => setSelectedRecommendation(e.target.value as RecommendationFilter)}
                 >
                   <option value="all">Semua Rekomendasi</option>
-                  <option value="sangat">Prioritas Utama</option>
-                  <option value="direkomendasikan">Direkomendasikan</option>
-                  <option value="rendah">Profit Rendah</option>
+                  <option value="topPriority">Prioritas Utama</option>
+                  <option value="recommended">Direkomendasikan</option>
+                  <option value="lowProfit">Profit Rendah</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <Sparkles className="h-5 w-5 text-gray-400" />
