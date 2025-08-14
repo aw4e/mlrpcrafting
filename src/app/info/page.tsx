@@ -22,9 +22,14 @@ import {
   Gem,
 } from "lucide-react";
 
+type RecommendationLevel = "topPriority" | "recommended" | "lowProfit";
+type RecommendationFilter = "all" | RecommendationLevel;
+
 export default function InfoPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [selectedRecommendation, setSelectedRecommendation] = useState<RecommendationFilter>("all");
 
   const typedMiningData = miningData as MiningData;
 
@@ -126,6 +131,14 @@ export default function InfoPage() {
         else category = "jewelry";
       }
 
+      let recommendation: RecommendationLevel | "none" = "none";
+      const hasRequirements = Object.keys(data.require || {}).length > 0;
+      if (!isBaseComponent(name) && hasRequirements) {
+        if (profitMargin >= 50) recommendation = "topPriority";
+        else if (profitMargin >= 25) recommendation = "recommended";
+        else if (profitMargin > 0) recommendation = "lowProfit";
+      }
+
       return {
         name,
         displayName: formatItemName(name),
@@ -135,7 +148,8 @@ export default function InfoPage() {
         profit,
         profitMargin,
         category,
-        hasRequirements: Object.keys(data.require || {}).length > 0,
+        hasRequirements,
+        recommendation,
       };
     });
   }, [typedMiningData]);
@@ -152,14 +166,21 @@ export default function InfoPage() {
       filtered = filtered.filter((item) => item.category === selectedCategory);
     }
 
+    if (selectedRecommendation !== "all") {
+      filtered = filtered.filter(
+        (item) => item.recommendation === selectedRecommendation
+      );
+    }
+
     filtered.sort((a, b) => {
-      if (a.profit > 0 && b.profit <= 0) return -1;
-      if (a.profit <= 0 && b.profit > 0) return 1;
-      return b.profit - a.profit;
+      if (sortOrder === "desc") {
+        return b.profitMargin - a.profitMargin;
+      }
+      return a.profitMargin - b.profitMargin;
     });
 
     return filtered;
-  }, [allItemsData, searchTerm, selectedCategory]);
+  }, [allItemsData, searchTerm, selectedCategory, selectedRecommendation, sortOrder]);
   const categories = [
     { key: "all", label: "Semua", icon: Package },
     { key: "ingots", label: "Ingots & Raw Materials", icon: DollarSign },
@@ -231,7 +252,7 @@ export default function InfoPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Search and Filter Controls */}
           <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-2xl mb-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -262,6 +283,38 @@ export default function InfoPage() {
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <Filter className="h-5 w-5 text-gray-400" />
                 </div>{" "}
+              </div>
+
+              {/* Recommendation Filter */}
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                  value={selectedRecommendation}
+                  onChange={(e) => setSelectedRecommendation(e.target.value as RecommendationFilter)}
+                >
+                  <option value="all">Semua Rekomendasi</option>
+                  <option value="topPriority">Prioritas Utama</option>
+                  <option value="recommended">Direkomendasikan</option>
+                  <option value="lowProfit">Profit Rendah</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <Sparkles className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+
+              {/* Sort By Profit */}
+              <div className="relative">
+                <select
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+                >
+                  <option value="desc">Profit Margin: High to Low</option>
+                  <option value="asc">Profit Margin: Low to High</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <TrendingUp className="h-5 w-5 text-gray-400" />
+                </div>
               </div>
             </div>
 
