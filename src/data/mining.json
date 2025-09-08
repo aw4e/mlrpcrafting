@@ -26,7 +26,7 @@
       "require": {
         "silver_ore": 2
       },
-      "price": 46
+      "price": 31
     },
     "alluminium_ingot": {
       "require": {
@@ -98,14 +98,14 @@
         "gold_ring": 1,
         "sapphire": 4
       },
-      "price": 280
+      "price": 210
     },
     "diamond_ring_silver": {
       "require": {
         "silver_ring": 1,
         "diamond": 4
       },
-      "price": 390
+      "price": 292
     },
     "emerald_ring_silver": {
       "require": {
@@ -234,7 +234,7 @@
         "gold_chain": 1,
         "emerald": 6
       },
-      "price": 934
+      "price": 700
     },
     "diamond_necklace_silver": {
       "require": {
