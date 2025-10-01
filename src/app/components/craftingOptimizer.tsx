@@ -293,7 +293,7 @@ export default function CraftingOptimizer() {
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-gradient-to-br from-green-400/20 to-blue-500/20 rounded-xl">
                 <Image
-                  src="/motionlife.gif"
+                  src="/imerp.gif"
                   alt="Crafting Calculator"
                   width={48}
                   height={48}
