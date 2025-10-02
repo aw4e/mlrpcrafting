@@ -233,11 +233,11 @@ export default function InfoPage() {
               <span className="text-white"> & Harga</span>
             </h1>
             <p className="text-xl text-gray-300 mb-2">
-              Daftar Lengkap Bahan dan Harga MLRP
+              Daftar Lengkap Bahan dan Harga IMERP
             </p>
             <p className="text-sm text-gray-400 max-w-2xl mx-auto">
               Informasi lengkap mengenai semua item, requirement, dan harga jual
-              di MotionLife RP. Termasuk perhitungan profit dan rekomendasi
+              di IME RP. Termasuk perhitungan profit dan rekomendasi
               crafting.
             </p>
           </div>
@@ -527,10 +527,10 @@ export default function InfoPage() {
             {/* About Section */}
             <div className="text-center md:text-left">
               <h3 className="text-lg font-semibold text-white mb-3">
-                MLRPCrafting
+                IMERPCrafting
               </h3>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Calculator crafting terbaik untuk MotionLife RP. Optimalkan
+                Calculator crafting terbaik untuk IME RP. Optimalkan
                 hasil crafting Anda dengan perhitungan yang akurat dan strategi
                 terbaik.
               </p>
@@ -576,7 +576,7 @@ export default function InfoPage() {
           {/* Copyright */}
           <div className="border-t border-slate-800 mt-8 pt-6 text-center">
             <p className="text-gray-500 text-sm">
-              © 2025 MLRPCrafting. All rights reserved. | Made for MotionLife
+              © 2025 IMERPCrafting. All rights reserved. | Made for IME
               RP Community
             </p>
           </div>
