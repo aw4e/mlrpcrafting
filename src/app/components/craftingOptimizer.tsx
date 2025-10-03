@@ -79,7 +79,6 @@ const materialCategories = {
   Necklaces: [
     "gold_chain",
     "silver_chain",
-    "diamond_necklace",
     "ruby_necklace",
     "sapphire_necklace",
     "emerald_necklace",
