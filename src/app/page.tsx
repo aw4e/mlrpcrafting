@@ -13,15 +13,15 @@ export default function Home() {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
               <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-                MLRP
+                IMERP
               </span>
               <span className="text-white">Crafting</span>
             </h1>
             <p className="text-xl text-gray-300 mb-2">
-              MotionLife RP Crafting Calculator
+              IME RP Crafting Calculator
             </p>
             <p className="text-sm text-gray-400 max-w-2xl mx-auto">
-              Optimasi crafting untuk server MotionLife RP dengan calculator
+              Optimasi crafting untuk server IME RP dengan calculator
               yang mudah digunakan dan efisien untuk semua kebutuhan crafting
               Anda.
             </p>
@@ -47,10 +47,10 @@ export default function Home() {
             {/* About Section */}
             <div className="text-center md:text-left">
               <h3 className="text-lg font-semibold text-white mb-3">
-                MLRPCrafting
+                IMERPCrafting
               </h3>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Calculator crafting terbaik untuk MotionLife RP. Optimalkan
+                Calculator crafting terbaik untuk IME RP. Optimalkan
                 hasil crafting Anda dengan perhitungan yang akurat dan strategi
                 terbaik.
               </p>
@@ -96,7 +96,7 @@ export default function Home() {
           {/* Copyright */}
           <div className="border-t border-slate-800 mt-8 pt-6 text-center">
             <p className="text-gray-500 text-sm">
-              © 2025 MLRPCrafting. All rights reserved. | Made for MotionLife
+              © 2025 IMERPCrafting. All rights reserved. | Made for IME
               RP Community
             </p>
           </div>
