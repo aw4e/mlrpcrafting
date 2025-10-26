@@ -63,7 +63,7 @@
       "require": {
         "uncut_emerald": 1
       },
-      "price": 108
+      "price": 104
     }
   },
   "perhiasan": {
@@ -126,7 +126,7 @@
         "silver_ring": 1,
         "sapphire": 4
       },
-      "price": 198
+      "price": 132
     },
     "gold_earring": {
       "require": {
@@ -152,7 +152,7 @@
         "gold_earring": 1,
         "ruby": 2
       },
-      "price": 280
+      "price": 210
     },
     "sapphire_earring": {
       "require": {
@@ -234,7 +234,7 @@
         "gold_chain": 1,
         "emerald": 6
       },
-      "price": 700
+      "price": 467
     },
     "diamond_necklace_silver": {
       "require": {
