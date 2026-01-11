@@ -2,7 +2,7 @@
   "tambang": {
     "coal": {
       "require": {},
-      "price": 10
+      "price": 7
     },
     "copper_ingot": {
       "require": {
@@ -20,19 +20,19 @@
       "require": {
         "gold_ore": 2
       },
-      "price": 58
+      "price": 39
     },
     "silver_ingot": {
       "require": {
         "silver_ore": 2
       },
-      "price": 46
+      "price": 31
     },
     "alluminium_ingot": {
       "require": {
         "alluminium_ore": 2
       },
-      "price": 18
+      "price": 13
     },
     "steel_ingot": {
       "require": {
@@ -45,7 +45,7 @@
       "require": {
         "uncut_sapphire": 1
       },
-      "price": 18
+      "price": 13
     },
     "diamond": {
       "require": {
@@ -63,7 +63,7 @@
       "require": {
         "uncut_emerald": 1
       },
-      "price": 104
+      "price": 52
     }
   },
   "perhiasan": {
@@ -84,7 +84,7 @@
         "gold_ring": 1,
         "emerald": 4
       },
-      "price": 592
+      "price": 444
     },
     "ruby_ring": {
       "require": {
@@ -105,7 +105,7 @@
         "silver_ring": 1,
         "diamond": 4
       },
-      "price": 292
+      "price": 195
     },
     "emerald_ring_silver": {
       "require": {
@@ -119,7 +119,7 @@
         "silver_ring": 1,
         "ruby": 4
       },
-      "price": 198
+      "price": 339
     },
     "sapphire_ring_silver": {
       "require": {
@@ -159,7 +159,7 @@
         "gold_earring": 1,
         "sapphire": 2
       },
-      "price": 188
+      "price": 141
     },
     "emerald_earring": {
       "require": {
@@ -194,7 +194,7 @@
         "silver_earring": 1,
         "emerald": 2
       },
-      "price": 326
+      "price": 244
     },
     "gold_chain": {
       "require": {
@@ -234,14 +234,14 @@
         "gold_chain": 1,
         "emerald": 6
       },
-      "price": 467
+      "price": 461
     },
     "diamond_necklace_silver": {
       "require": {
         "silver_chain": 1,
         "diamond": 6
       },
-      "price": 468
+      "price": 312
     },
     "ruby_necklace_silver": {
       "require": {
@@ -262,7 +262,7 @@
         "silver_chain": 1,
         "sapphire": 6
       },
-      "price": 327
+      "price": 218
     }
   }
 }
